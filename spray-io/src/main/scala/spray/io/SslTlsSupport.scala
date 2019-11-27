@@ -27,6 +27,7 @@ import SSLEngineResult.Status._
 import SSLEngineResult.HandshakeStatus._
 import java.net.InetSocketAddress
 import scala.util.control.NonFatal
+import scala.language.implicitConversions
 
 trait SslTlsContext extends PipelineContext {
   /**
@@ -49,8 +50,7 @@ trait SslTlsContext extends PipelineContext {
  */
 object SslTlsSupport {
 
-  def apply(maxEncryptionChunkSize: Int, publishSslSessionInfo: Boolean,
-            tracing: Boolean = false): OptionalPipelineStage[SslTlsContext] =
+  def apply(maxEncryptionChunkSize: Int, publishSslSessionInfo: Boolean, tracing: Boolean = false): OptionalPipelineStage[SslTlsContext] =
     new OptionalPipelineStage[SslTlsContext] {
       def enabled(context: SslTlsContext) = context.sslEngine.isDefined
 

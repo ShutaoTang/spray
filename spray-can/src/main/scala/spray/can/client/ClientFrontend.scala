@@ -67,7 +67,7 @@ private object ClientFrontend {
               } else log.warning("Received ChunkedMessageEnd outside of chunking request " +
                 "context, ignoring...")
 
-            case Http.MessageCommand(HttpMessagePartWrapper(x: HttpRequestPart, _)) if !closeCommanders.isEmpty ⇒
+            case Http.MessageCommand(HttpMessagePartWrapper(x: HttpRequestPart, _)) if closeCommanders.nonEmpty ⇒
               log.error("Received {} after CloseCommand, ignoring", x)
 
             case x: Http.CloseCommand ⇒
@@ -81,7 +81,7 @@ private object ClientFrontend {
 
           val eventPipeline: EPL = {
             case Http.MessageEvent(x: HttpMessageEnd) ⇒
-              if (!openRequests.isEmpty) {
+              if (openRequests.nonEmpty) {
                 val currentRecord = openRequests.head
                 openRequests = openRequests.tail
                 if (openRequests.nonEmpty)
@@ -97,7 +97,7 @@ private object ClientFrontend {
               }
 
             case Http.MessageEvent(x: HttpMessagePart) ⇒
-              if (!openRequests.isEmpty) {
+              if (openRequests.nonEmpty) {
                 if (x.isInstanceOf[HttpMessageStart]) openRequests.head.state = AwaitingChunkEnd
                 dispatch(openRequests.head.sender, x)
               } else {
@@ -134,7 +134,7 @@ private object ClientFrontend {
           }
 
           def checkForTimeout(): Unit =
-            if (!openRequests.isEmpty && requestTimeout.isFinite) {
+            if (openRequests.nonEmpty && requestTimeout.isFinite) {
               val rec = openRequests.head
               if (rec.state.isOverdue(requestTimeout)) {
                 val r = rec.request.message.asInstanceOf[HttpRequest]

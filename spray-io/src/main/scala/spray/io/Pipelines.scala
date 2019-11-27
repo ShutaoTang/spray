@@ -17,11 +17,11 @@
 package spray.io
 
 import language.experimental.macros
+import scala.language.implicitConversions
 import java.net.InetSocketAddress
 import scala.reflect.macros.{ Context ⇒ MacroContext }
 import akka.actor.ActorContext
 import akka.event.LoggingAdapter
-import akka.io.Tcp
 
 //# pipelines
 trait Pipelines {

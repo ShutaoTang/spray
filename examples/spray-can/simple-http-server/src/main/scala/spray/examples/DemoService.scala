@@ -54,7 +54,7 @@ class DemoService extends Actor with ActorLogging {
       val parts = r.asPartStream()
       val client = sender
       val handler = context.actorOf(Props(new FileUploadHandler(client, parts.head.asInstanceOf[ChunkedRequestStart])))
-      parts.tail.foreach(handler !)
+      parts.tail.foreach(handler ! _)
 
     case s@ChunkedRequestStart(HttpRequest(POST, Uri.Path("/file-upload"), _, _, _)) =>
       val client = sender

@@ -53,7 +53,7 @@ object LruCache {
 }
 
 /**
- * A thread-safe implementation of [[spray.caching.cache]].
+ * A thread-safe implementation of [[spray.caching.Cache]].
  * The cache has a defined maximum number of entries it can store. After the maximum capacity is reached new
  * entries cause old ones to be evicted in a last-recently-used manner, i.e. the entries that haven't been accessed for
  * the longest time are evicted first.
@@ -99,7 +99,7 @@ final class SimpleLruCache[V](val maxCapacity: Int, val initialCapacity: Int) ex
 }
 
 /**
- * A thread-safe implementation of [[spray.caching.cache]].
+ * A thread-safe implementation of [[spray.caching.Cache]].
  * The cache has a defined maximum number of entries is can store. After the maximum capacity has been reached new
  * entries cause old ones to be evicted in a last-recently-used manner, i.e. the entries that haven't been accessed for
  * the longest time are evicted first.
@@ -108,7 +108,7 @@ final class SimpleLruCache[V](val maxCapacity: Int, val initialCapacity: Int) ex
  * limits the maximum time an entry is kept without having been accessed. If both values are non-zero the time-to-live
  * has to be strictly greater than the time-to-idle.
  * Note that expired entries are only evicted upon next access (or by being thrown out by the capacity constraint), so
- * they might prevent gargabe collection of their values for longer than expected.
+ * they might prevent garbage collection of their values for longer than expected.
  *
  * @param timeToLive the time-to-live in millis, zero for disabling ttl-expiration
  * @param timeToIdle the time-to-idle in millis, zero for disabling tti-expiration
@@ -126,7 +126,7 @@ final class ExpiringLruCache[V](maxCapacity: Long, initialCapacity: Int,
   @tailrec
   def get(key: Any): Option[Future[V]] = store.get(key) match {
     case null ⇒ None
-    case entry if (isAlive(entry)) ⇒
+    case entry if isAlive(entry) ⇒
       entry.refresh()
       Some(entry.future)
     case entry ⇒
@@ -167,9 +167,9 @@ final class ExpiringLruCache[V](maxCapacity: Long, initialCapacity: Int,
   }
 
   def remove(key: Any) = store.remove(key) match {
-    case null                      ⇒ None
-    case entry if (isAlive(entry)) ⇒ Some(entry.future)
-    case entry                     ⇒ None
+    case null                    ⇒ None
+    case entry if isAlive(entry) ⇒ Some(entry.future)
+    case _                       ⇒ None
   }
 
   def clear(): Unit = { store.clear() }
@@ -184,13 +184,13 @@ final class ExpiringLruCache[V](maxCapacity: Long, initialCapacity: Int,
   def size = store.size
 
   private def isAlive(entry: Entry[V]) =
-    (entry.created + timeToLive).isFuture &&
-      (entry.lastAccessed + timeToIdle).isFuture
+    (entry.created + timeToLive).isFuture && (entry.lastAccessed + timeToIdle).isFuture
 }
 
 private[caching] class Entry[T](val promise: Promise[T]) {
   @volatile var created = Timestamp.now
   @volatile var lastAccessed = Timestamp.now
+
   def future = promise.future
   def refresh(): Unit = {
     // we dont care whether we overwrite a potentially newer value

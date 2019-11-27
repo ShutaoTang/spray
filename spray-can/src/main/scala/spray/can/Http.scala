@@ -46,8 +46,12 @@ object Http extends ExtensionKey[HttpExt] {
                      options: immutable.Traversable[Inet.SocketOption],
                      settings: Option[ClientConnectionSettings])(implicit val sslEngineProvider: ClientSSLEngineProvider) extends Command
   object Connect {
-    def apply(host: String, port: Int = 80, sslEncryption: Boolean = false, localAddress: Option[InetSocketAddress] = None,
-              options: immutable.Traversable[Inet.SocketOption] = Nil, settings: Option[ClientConnectionSettings] = None)(implicit sslEngineProvider: ClientSSLEngineProvider): Connect =
+    def apply(host: String,
+              port: Int = 80,
+              sslEncryption: Boolean = false,
+              localAddress: Option[InetSocketAddress] = None,
+              options: immutable.Traversable[Inet.SocketOption] = Nil,
+              settings: Option[ClientConnectionSettings] = None)(implicit sslEngineProvider: ClientSSLEngineProvider): Connect =
       apply(new InetSocketAddress(host, port), sslEncryption, localAddress, options, settings)
   }
 
@@ -57,12 +61,17 @@ object Http extends ExtensionKey[HttpExt] {
                   options: immutable.Traversable[Inet.SocketOption],
                   settings: Option[ServerSettings])(implicit val sslEngineProvider: ServerSSLEngineProvider) extends Command
   object Bind {
-    def apply(listener: ActorRef, interface: String, port: Int = 80, backlog: Int = 100,
-              options: immutable.Traversable[Inet.SocketOption] = Nil, settings: Option[ServerSettings] = None)(implicit sslEngineProvider: ServerSSLEngineProvider): Bind =
+    def apply(listener: ActorRef,
+              interface: String,
+              port: Int = 80,
+              backlog: Int = 100,
+              options: immutable.Traversable[Inet.SocketOption] = Nil,
+              settings: Option[ServerSettings] = None)(implicit sslEngineProvider: ServerSSLEngineProvider): Bind =
       apply(listener, new InetSocketAddress(interface, port), backlog, options, settings)
   }
 
-  case class HostConnectorSetup(host: String, port: Int = 80,
+  case class HostConnectorSetup(host: String,
+                                port: Int = 80,
                                 sslEncryption: Boolean = false,
                                 options: immutable.Traversable[Inet.SocketOption] = Nil,
                                 settings: Option[HostConnectorSettings] = None,
@@ -85,8 +94,7 @@ object Http extends ExtensionKey[HttpExt] {
     def apply(x: HttpRequest) = throw new MatchError(x)
   }
 
-  case class Register(handler: ActorRef,
-                      fastPath: FastPath = EmptyFastPath) extends Command
+  case class Register(handler: ActorRef, fastPath: FastPath = EmptyFastPath) extends Command
   case class RegisterChunkHandler(handler: ActorRef) extends Command
 
   case class Unbind(timeout: Duration) extends Command

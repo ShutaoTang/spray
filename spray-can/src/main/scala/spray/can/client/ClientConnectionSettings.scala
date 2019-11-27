@@ -18,6 +18,7 @@ package spray.can.client
 
 import com.typesafe.config.Config
 import scala.concurrent.duration.Duration
+import scala.language.postfixOps
 import akka.actor.ActorRefFactory
 import spray.can.parsing.ParserSettings
 import spray.util._
@@ -68,6 +69,7 @@ object ClientConnectionSettings extends SettingsCompanion[ClientConnectionSettin
       ProxySettings fromSubConfig c.getConfig("proxy"))
   }
 
-  def apply(optionalSettings: Option[ClientConnectionSettings])(implicit actorRefFactory: ActorRefFactory): ClientConnectionSettings =
+  def apply(optionalSettings: Option[ClientConnectionSettings])
+           (implicit actorRefFactory: ActorRefFactory): ClientConnectionSettings =
     optionalSettings getOrElse apply(actorSystem)
 }

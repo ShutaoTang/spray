@@ -18,11 +18,13 @@ package akka.spray
 
 import akka.actor._
 
+import scala.annotation.tailrec
+
 object RefUtils {
 
-  def provider(ref: ActorRef): ActorRefProvider =
-    asInternalActorRef(ref).provider
+  def provider(ref: ActorRef): ActorRefProvider = asInternalActorRef(ref).provider
 
+  @tailrec
   def provider(actorRefFactory: ActorRefFactory): ActorRefProvider =
     actorRefFactory match {
       case x: ActorContext        ⇒ provider(x.system)
@@ -30,8 +32,7 @@ object RefUtils {
       case x: ActorSystem         ⇒ throw new IllegalArgumentException("Unsupported ActorSystem implementation: " + x)
     }
 
-  def isLocal(ref: ActorRef): Boolean =
-    asInternalActorRef(ref).isLocal
+  def isLocal(ref: ActorRef): Boolean = asInternalActorRef(ref).isLocal
 
   private[akka] def asInternalActorRef(ref: ActorRef): InternalActorRef =
     ref match {

@@ -18,6 +18,7 @@ package spray.caching
 
 import scala.concurrent.{ Promise, Future, ExecutionContext }
 import scala.util.control.NonFatal
+import scala.language.implicitConversions
 
 /**
  * General interface implemented by all spray cache implementations.

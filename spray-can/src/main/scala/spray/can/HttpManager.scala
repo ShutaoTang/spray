@@ -108,7 +108,7 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
   }: Receive) orElse behavior
 
   def shutdownSettingsGroups(cmd: Http.CloseAll, commanders: Set[ActorRef]): Unit =
-    if (!settingsGroups.isEmpty) {
+    if (settingsGroups.nonEmpty) {
       val running: Set[ActorRef] = settingsGroups.values.map { x ⇒ x ! cmd; x }(collection.breakOut)
       context.become(closingSettingsGroups(cmd, running, commanders))
     } else shutdownConnectors(cmd, commanders)
@@ -126,7 +126,7 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
     }
 
   def shutdownConnectors(cmd: Http.CloseAll, commanders: Set[ActorRef]): Unit =
-    if (!connectors.isEmpty) {
+    if (connectors.nonEmpty) {
       val running: Set[ActorRef] = connectors.values.map { x ⇒ x ! cmd; x }(collection.breakOut)
       context.become(closingConnectors(running, commanders))
     } else shutdownListeners(commanders)

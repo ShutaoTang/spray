@@ -19,6 +19,7 @@ package spray.can.server
 import com.typesafe.config.Config
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
+import scala.language.implicitConversions
 import spray.can.parsing.ParserSettings
 import spray.http.parser.HttpParser
 import spray.http.HttpHeaders._

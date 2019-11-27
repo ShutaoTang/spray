@@ -34,7 +34,7 @@ import scala.annotation.tailrec
  */
 object SslBufferPool {
 
-  // we are using Nettys default values:
+  // we are using Netty's default values:
   // 16665 + 1024 (room for compressed data) + 1024 (for OpenJDK compatibility)
   private final val MaxPacketSize = 16665 + 2048
 

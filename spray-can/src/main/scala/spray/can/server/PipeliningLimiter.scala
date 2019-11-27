@@ -76,7 +76,7 @@ private object PipeliningLimiter {
 
           @tailrec
           def unparkOneRequest(): Unit =
-            if (!parkedRequestParts.isEmpty) {
+            if (parkedRequestParts.nonEmpty) {
               val next = parkedRequestParts.head
               parkedRequestParts = parkedRequestParts.tail
 
