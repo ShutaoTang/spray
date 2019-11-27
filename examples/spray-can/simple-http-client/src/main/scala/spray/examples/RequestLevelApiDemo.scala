@@ -11,7 +11,7 @@ import spray.can.Http
 import HttpMethods._
 
 trait RequestLevelApiDemo {
-  private implicit val timeout: Timeout = 5.seconds
+  private implicit val timeout: Timeout = 10.seconds
 
   // The request-level API is the highest-level way to access the spray-can client-side infrastructure.
   // All you have to do is to send an HttpRequest instance to `IO(Http)` and wait for the response.
@@ -24,8 +24,7 @@ trait RequestLevelApiDemo {
       response <- IO(Http).ask(HttpRequest(GET, Uri(s"http://$host/"))).mapTo[HttpResponse]
       _ <- IO(Http) ? Http.CloseAll
     } yield {
-      system.log.info("Request-Level API: received {} response with {} bytes",
-        response.status, response.entity.data.length)
+      system.log.info("Request-Level API: received {} response with {} bytes", response.status, response.entity.data.length)
       response.header[HttpHeaders.Server].get.products.head
     }
   }

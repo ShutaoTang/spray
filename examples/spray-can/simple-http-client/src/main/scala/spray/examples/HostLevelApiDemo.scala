@@ -11,7 +11,7 @@ import spray.http._
 import HttpMethods._
 
 trait HostLevelApiDemo {
-  private implicit val timeout: Timeout = 5.seconds
+  private implicit val timeout = Timeout(10.seconds)
 
   // With the host-level API you ask the spray-can HTTP infrastructure to setup an
   // "HttpHostConnector" for you, which is an entity that manages a pool of connection to
@@ -26,8 +26,7 @@ trait HostLevelApiDemo {
       response <- hostConnector.ask(HttpRequest(GET, "/")).mapTo[HttpResponse]
       _ <- hostConnector ? Http.CloseAll
     } yield {
-      system.log.info("Host-Level API: received {} response with {} bytes",
-        response.status, response.entity.data.length)
+      system.log.info("Host-Level API: received {} response with {} bytes", response.status, response.entity.data.length)
       response.header[HttpHeaders.Server].get.products.head
     }
   }

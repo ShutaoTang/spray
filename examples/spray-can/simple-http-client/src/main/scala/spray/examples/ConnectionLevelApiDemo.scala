@@ -11,10 +11,10 @@ import spray.http._
 import HttpMethods._
 
 trait ConnectionLevelApiDemo {
-  private implicit val timeout: Timeout = 5.seconds
+  private implicit val timeout = Timeout(10.seconds)
 
   def demoConnectionLevelApi(host: String)(implicit system: ActorSystem): Future[ProductVersion] = {
-    val actor = system.actorOf(Props(new MyRequestActor(host)), name = "my-request-actor")
+    val actor = system.actorOf(RequestActor.props(host), name = "my-request-actor")
     val future = actor ? HttpRequest(GET, "/")
     future.mapTo[ProductVersion]
   }
@@ -25,7 +25,7 @@ trait ConnectionLevelApiDemo {
   // as well as how requests are scheduled onto them.
 
   // Actor that manages the lifecycle of a single HTTP connection for a single request
-  class MyRequestActor(host: String) extends Actor with ActorLogging {
+  class RequestActor(host: String) extends Actor with ActorLogging {
     import context.system
 
     def receive: Receive = {
@@ -70,5 +70,9 @@ trait ConnectionLevelApiDemo {
         commander ! Status.Failure(new RuntimeException("Connection close error"))
         context.stop(self)
     }
+  }
+
+  object RequestActor {
+    def props(host: String) = Props(new RequestActor(host))
   }
 }

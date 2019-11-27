@@ -69,7 +69,6 @@ object ClientConnectionSettings extends SettingsCompanion[ClientConnectionSettin
       ProxySettings fromSubConfig c.getConfig("proxy"))
   }
 
-  def apply(optionalSettings: Option[ClientConnectionSettings])
-           (implicit actorRefFactory: ActorRefFactory): ClientConnectionSettings =
+  def apply(optionalSettings: Option[ClientConnectionSettings])(implicit actorRefFactory: ActorRefFactory): ClientConnectionSettings =
     optionalSettings getOrElse apply(actorSystem)
 }
