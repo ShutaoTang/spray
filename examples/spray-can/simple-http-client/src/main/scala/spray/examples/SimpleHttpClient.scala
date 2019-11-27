@@ -4,7 +4,7 @@ import scala.util.{Failure, Success}
 import akka.actor.ActorSystem
 import akka.event.Logging
 
-object Main extends App
+object SimpleHttpClient extends App
   with ConnectionLevelApiDemo
   with HostLevelApiDemo
   with RequestLevelApiDemo {

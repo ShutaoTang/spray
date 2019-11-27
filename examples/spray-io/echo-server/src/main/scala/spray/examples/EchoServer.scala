@@ -8,12 +8,12 @@ import akka.io.{Tcp, IO}
 import akka.util.{ByteString, Timeout}
 import akka.actor._
 
-object Main extends App {
+object EchoServer extends App {
   // we need an ActorSystem to host our application in
   implicit val system = ActorSystem("echo-server")
 
   // and our actual server "service" actor
-  val server = system.actorOf(Props(new EchoServer), name = "echo-server")
+  val server = system.actorOf(Props(new EchoServerActor), name = "echo-server")
 
   // we bind the server to a port on localhost and hook
   // in a continuation that informs us when bound
@@ -29,7 +29,7 @@ object Main extends App {
   }
 }
 
-class EchoServer extends Actor with ActorLogging {
+class EchoServerActor extends Actor with ActorLogging {
   var childrenCount = 0
 
   def receive = {

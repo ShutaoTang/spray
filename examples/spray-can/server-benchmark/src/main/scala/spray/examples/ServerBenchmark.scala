@@ -4,7 +4,7 @@ import akka.actor.{Props, ActorSystem}
 import akka.io.IO
 import spray.can.Http
 
-object Main extends App {
+object ServerBenchmark extends App {
 
   implicit val system = ActorSystem()
 

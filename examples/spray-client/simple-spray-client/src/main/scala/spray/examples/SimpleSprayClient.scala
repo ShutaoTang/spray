@@ -22,7 +22,7 @@ object ElevationJsonProtocol extends DefaultJsonProtocol {
   implicit def googleApiResultFormat[T :JsonFormat] = jsonFormat2(GoogleApiResult.apply[T])
 }
 
-object Main extends App {
+object SimpleSprayClient extends App {
   // we need an ActorSystem to host our application in
   implicit val system = ActorSystem("simple-spray-client")
   import system.dispatcher // execution context for futures below
