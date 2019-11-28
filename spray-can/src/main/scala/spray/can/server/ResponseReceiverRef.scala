@@ -39,7 +39,8 @@ private class ResponseReceiverRef(openRequest: OpenRequest)
     extends UnregisteredActorRef(openRequest.context.actorContext) {
   import ResponseReceiverRef._
 
-  @volatile private[this] var _responseStateDoNotCallMeDirectly: ResponseState =
+  @volatile
+  private[this] var _responseStateDoNotCallMeDirectly: ResponseState =
     if (openRequest.isWaitingForChunkHandler) WaitingForChunkHandler else Uncompleted
 
   def handle(message: Any)(implicit sender: ActorRef) {

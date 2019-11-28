@@ -25,10 +25,14 @@ class BenchmarkService extends Actor {
       HttpResponse(entity = jsonResponseEntity)
   }
 
-  def receive = {
+  def receive: Receive = {
     // when a new connection comes in we register ourselves as the connection handler
     case _: Http.Connected => sender ! Http.Register(self, fastPath = fastPath)
 
+    /**
+     * Note that below sender() is a temp actor
+     * see [[akka.spray.UnregisteredActorRefBase]] and [[spray.can.server.OpenRequestComponent.DefaultOpenRequest]]
+     */
     case HttpRequest(GET, Uri.Path("/"), _, _, _) => sender ! HttpResponse(
       entity = HttpEntity(MediaTypes.`text/html`,
         <html>
@@ -53,7 +57,9 @@ class BenchmarkService extends Actor {
 
     case HttpRequest(GET, Uri.Path("/stop"), _, _, _) =>
       sender ! HttpResponse(entity = "Shutting down in 1 second ...")
-      context.system.scheduler.scheduleOnce(1.second) { context.system.shutdown() }
+      context.system.scheduler.scheduleOnce(1.second) {
+        context.system.shutdown()
+      }
 
     case _: HttpRequest => sender ! HttpResponse(NotFound, entity = "Unknown resource!")
   }

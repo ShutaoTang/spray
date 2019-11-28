@@ -82,7 +82,8 @@ object Http extends ExtensionKey[HttpExt] {
       else copy(settings = Some(HostConnectorSettings(actorSystem)))
   }
   object HostConnectorSetup {
-    def apply(host: String, port: Int, sslEncryption: Boolean)(implicit refFactory: ActorRefFactory, sslEngineProvider: ClientSSLEngineProvider): HostConnectorSetup =
+    def apply(host: String, port: Int, sslEncryption: Boolean)
+             (implicit refFactory: ActorRefFactory, sslEngineProvider: ClientSSLEngineProvider): HostConnectorSetup =
       apply(host, port, sslEncryption, Nil).normalized
   }
 
@@ -111,15 +112,19 @@ object Http extends ExtensionKey[HttpExt] {
   case object ClearStats extends Command
   case object GetStats extends Command
 
-  type SetIdleTimeout = ConnectionTimeouts.SetIdleTimeout; val SetIdleTimeout = ConnectionTimeouts.SetIdleTimeout
+  type SetIdleTimeout = ConnectionTimeouts.SetIdleTimeout
+  val SetIdleTimeout = ConnectionTimeouts.SetIdleTimeout
 
   case class MessageCommand(cmd: HttpMessagePartWrapper) extends Command
 
   /// EVENTS
   type Event = Tcp.Event
 
-  type Connected = Tcp.Connected; val Connected = Tcp.Connected
-  type Bound = Tcp.Bound; val Bound = Tcp.Bound
+  type Connected = Tcp.Connected
+  val Connected = Tcp.Connected
+
+  type Bound = Tcp.Bound
+  val Bound = Tcp.Bound
   val Unbound = Tcp.Unbound
   type ConnectionClosed = Tcp.ConnectionClosed
 
@@ -127,7 +132,9 @@ object Http extends ExtensionKey[HttpExt] {
   val Aborted = Tcp.Aborted
   val ConfirmedClosed = Tcp.ConfirmedClosed
   val PeerClosed = Tcp.PeerClosed
-  type ErrorClosed = Tcp.ErrorClosed; val ErrorClosed = Tcp.ErrorClosed
+
+  type ErrorClosed = Tcp.ErrorClosed
+  val ErrorClosed = Tcp.ErrorClosed
 
   case object ClosedAll extends Event
 
@@ -140,7 +147,8 @@ object Http extends ExtensionKey[HttpExt] {
   // exceptions
   class ConnectionException(message: String) extends RuntimeException(message)
 
-  class ConnectionAttemptFailedException(val host: String, val port: Int) extends ConnectionException(s"Connection attempt to $host:$port failed")
+  class ConnectionAttemptFailedException(val host: String, val port: Int)
+    extends ConnectionException(s"Connection attempt to $host:$port failed")
 
   class RequestTimeoutException(val request: HttpRequestPart with HttpMessageStart, message: String)
     extends ConnectionException(message)

@@ -171,10 +171,14 @@ private trait OpenRequestComponent { component ⇒
 
     def handleMessageChunk(chunk: MessageChunk): Unit =
       state match {
-        case WaitingForChunkHandlerBuffering(timeout, receiveds) ⇒ state = WaitingForChunkHandlerBuffering(timeout, receiveds.enqueue(chunk))
-        case ReceivingRequestChunks(chunkHandler) ⇒ downstreamCommandPL(Pipeline.Tell(chunkHandler, chunk, receiverRef))
-        case x if nextInChain.isEmpty ⇒ throw new IllegalArgumentException(s"$this Didn't expect message chunks in state $state")
-        case _ ⇒ nextInChain handleMessageChunk chunk
+        case WaitingForChunkHandlerBuffering(timeout, receiveds) ⇒
+          state = WaitingForChunkHandlerBuffering(timeout, receiveds.enqueue(chunk))
+        case ReceivingRequestChunks(chunkHandler) ⇒
+          downstreamCommandPL(Pipeline.Tell(chunkHandler, chunk, receiverRef))
+        case _ if nextInChain.isEmpty ⇒
+          throw new IllegalArgumentException(s"$this Didn't expect message chunks in state $state")
+        case _ ⇒
+          nextInChain handleMessageChunk chunk
       }
 
     def handleChunkedMessageEnd(part: ChunkedMessageEnd): Unit =

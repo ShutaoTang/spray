@@ -45,15 +45,13 @@ private object ClientFrontend {
                 render(x, x, ack)
                 val state = if (openRequests.isEmpty) AwaitingResponseStart(Timestamp.now) else AwaitingPreviousResponseEnd
                 openRequests = openRequests enqueue new RequestRecord(x, context.sender, state)
-              } else log.warning("Received new HttpRequest before previous chunking request was " +
-                "finished, ignoring...")
+              } else log.warning("Received new HttpRequest before previous chunking request was finished, ignoring...")
 
             case Http.MessageCommand(HttpMessagePartWrapper(x: ChunkedRequestStart, ack)) if closeCommanders.isEmpty ⇒
               if (lastRequestComplete) {
                 render(x, x.request, ack)
                 openRequests = openRequests enqueue new RequestRecord(x, context.sender, state = AwaitingChunkEnd)
-              } else log.warning("Received new ChunkedRequestStart before previous chunking " +
-                "request was finished, ignoring...")
+              } else log.warning("Received new ChunkedRequestStart before previous chunking request was finished, ignoring...")
 
             case Http.MessageCommand(HttpMessagePartWrapper(x: MessageChunk, ack)) if closeCommanders.isEmpty ⇒
               if (!lastRequestComplete) {
@@ -64,8 +62,7 @@ private object ClientFrontend {
               if (!lastRequestComplete) {
                 render(x, openRequests.last.request.message, ack)
                 openRequests.last.state = AwaitingResponseStart(Timestamp.now) // only start timer once the request is completed
-              } else log.warning("Received ChunkedMessageEnd outside of chunking request " +
-                "context, ignoring...")
+              } else log.warning("Received ChunkedMessageEnd outside of chunking request context, ignoring...")
 
             case Http.MessageCommand(HttpMessagePartWrapper(x: HttpRequestPart, _)) if closeCommanders.nonEmpty ⇒
               log.error("Received {} after CloseCommand, ignoring", x)

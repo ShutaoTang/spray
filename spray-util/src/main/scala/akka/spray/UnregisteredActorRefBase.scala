@@ -66,19 +66,17 @@ abstract class UnregisteredActorRefBase(val provider: ActorRefProvider) extends 
     case Registering ⇒ path // spin until registration is completed
   }
 
-  override def !(message: Any)(implicit sender: ActorRef = Actor.noSender) {
-    state match {
-      case Stopped | _: StoppedWithPath ⇒ provider.deadLetters ! message
-      case _                            ⇒ handle(message)
-    }
+  override def !(message: Any)(implicit sender: ActorRef = Actor.noSender): Unit = state match {
+    case Stopped | _: StoppedWithPath ⇒ provider.deadLetters ! message
+    case _                            ⇒ handle(message)
   }
 
-  override def sendSystemMessage(message: SystemMessage): Unit = {
-    message match {
-      case _: Terminate ⇒ stop()
-      case _            ⇒
-    }
+
+  override def sendSystemMessage(message: SystemMessage): Unit = message match {
+    case _: Terminate ⇒ stop()
+    case _            ⇒
   }
+
 
   override def isTerminated: Boolean = state match {
     case Stopped | _: StoppedWithPath ⇒ true
@@ -91,7 +89,9 @@ abstract class UnregisteredActorRefBase(val provider: ActorRefProvider) extends 
       case null ⇒ // if path was never queried nobody can possibly be watching us, so we don't have to publish termination either
         if (updateState(null, Stopped)) onStop() else stop()
       case p: ActorPath ⇒
-        if (updateState(p, StoppedWithPath(p))) { try onStop() finally unregister(p) } else stop()
+        if (updateState(p, StoppedWithPath(p))) {
+          try onStop() finally unregister(p)
+        } else stop()
       case Stopped | _: StoppedWithPath ⇒ // already stopped
       case Registering                  ⇒ stop() // spin until registration is completed before stopping
     }

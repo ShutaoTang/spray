@@ -94,9 +94,7 @@ private object ResponseParsing {
             try handleParsingResult(parser(data))
             catch {
               case NonFatal(e) ⇒
-                handleError(ErrorInfo(
-                  "Invalid response",
-                  e.getMessage.nullAsEmpty))
+                handleError(ErrorInfo("Invalid response", e.getMessage.nullAsEmpty))
             }
 
           def handleError(info: ErrorInfo): Unit = {

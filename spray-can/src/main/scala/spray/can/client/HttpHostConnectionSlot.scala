@@ -94,8 +94,7 @@ private class HttpHostConnectionSlot(host: String, port: Int,
     case _: Timedout ⇒ // drop, we'll see a CommandFailed next
   }
 
-  def connected(httpConnection: ActorRef, openRequests: Queue[RequestContext],
-                closeAfterResponseEnd: Boolean = false): Receive = {
+  def connected(httpConnection: ActorRef, openRequests: Queue[RequestContext], closeAfterResponseEnd: Boolean = false): Receive = {
     case part: HttpResponsePart if openRequests.nonEmpty ⇒
       def handleResponseCompletion(closeAfterResponseEnd: Boolean): Unit = {
         context.parent ! RequestCompleted
@@ -182,11 +181,11 @@ private class HttpHostConnectionSlot(host: String, port: Int,
       Some(req.method)
     case _ ⇒ None //request should not be followed
   }
-  def responseIfComplete(res: HttpResponsePart): Option[HttpResponse] =
-    res match {
-      case r: HttpResponse ⇒ Some(r)
-      case _               ⇒ None
-    }
+
+  def responseIfComplete(res: HttpResponsePart): Option[HttpResponse] = res match {
+    case r: HttpResponse ⇒ Some(r)
+    case _               ⇒ None
+  }
 
   def redirect(location: Location, method: HttpMethod, ctx: RequestContext) {
     val baseUri = ctx.request.uri.toEffectiveHttpRequestUri(Uri.Host(host), port, sslEncryption)
@@ -200,8 +199,7 @@ private class HttpHostConnectionSlot(host: String, port: Int,
   def closing(httpConnection: ActorRef, openRequests: Queue[RequestContext], error: String, retry: RetryMode): Receive =
     closing(httpConnection, openRequests, new Http.ConnectionException(error), retry)
 
-  def closing(httpConnection: ActorRef, openRequests: Queue[RequestContext], error: Http.ConnectionException,
-              retry: RetryMode): Receive = {
+  def closing(httpConnection: ActorRef, openRequests: Queue[RequestContext], error: Http.ConnectionException, retry: RetryMode): Receive = {
     case _: Http.ConnectionClosed ⇒
       reportDisconnection(openRequests, error, retry)
       context.become(waitingForConnectionTermination(httpConnection))
@@ -224,14 +222,17 @@ private class HttpHostConnectionSlot(host: String, port: Int,
     case _: Http.ConnectionClosed     ⇒ // ignore
     case Terminated(`httpConnection`) ⇒ context.stop(self)
   }
+
   def reportDisconnection(openRequests: Queue[RequestContext], error: String, retry: RetryMode): Unit =
     reportDisconnection(openRequests, new Http.ConnectionException(error), retry)
+
   def reportDisconnection(openRequests: Queue[RequestContext], error: Http.ConnectionException, retry: RetryMode): Unit = {
     context.parent ! Disconnected(openRequests.size)
     openRequests foreach clear(error, retry)
   }
 
   def clear(error: String, retry: RetryMode): RequestContext ⇒ Unit = clear(new Http.ConnectionException(error), retry)
+
   def clear(error: Http.ConnectionException, retry: RetryMode): RequestContext ⇒ Unit = {
     case ctx @ RequestContext(request, retriesLeft, _, _) if retry.shouldRetry(request) && retriesLeft > 0 ⇒
       log.warning("{} in response to {} with {} retries left, retrying...", error.getMessage, format(request), retriesLeft)
