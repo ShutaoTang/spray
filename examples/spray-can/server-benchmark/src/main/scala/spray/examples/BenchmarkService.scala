@@ -30,8 +30,9 @@ class BenchmarkService extends Actor {
     case _: Http.Connected => sender ! Http.Register(self, fastPath = fastPath)
 
     /**
-     * Note that below sender() is a temp actor
-     * see [[akka.spray.UnregisteredActorRefBase]] and [[spray.can.server.OpenRequestComponent.DefaultOpenRequest]]
+     * Note that below sender() is
+     *   LocalActorRef --> Actor[akka://default/user/IO-HTTP/listener-0/3#-1099396836]
+     * see [[spray.can.server.HttpListener]]
      */
     case HttpRequest(GET, Uri.Path("/"), _, _, _) => sender ! HttpResponse(
       entity = HttpEntity(MediaTypes.`text/html`,
@@ -51,6 +52,11 @@ class BenchmarkService extends Actor {
       )
     )
 
+    /**
+     * Note that below sender() is a temp actor, ResponseReceiverRef --> Actor[akka://default/temp/$b]
+     * see [[akka.spray.UnregisteredActorRefBase]] and [[spray.can.server.OpenRequestComponent.DefaultOpenRequest]]
+     * or the function openNewRequest(...) in [[spray.can.server.ServerFrontend]]
+     */
     case HttpRequest(GET, Uri.Path("/ping"), _, _, _) => sender ! HttpResponse(entity = "PONG!")
 
     case HttpRequest(GET, Uri.Path("/json"), _, _, _) => sender ! HttpResponse(entity = jsonResponseEntity)

@@ -181,15 +181,15 @@ private trait OpenRequestComponent { component ⇒
           nextInChain handleMessageChunk chunk
       }
 
-    def handleChunkedMessageEnd(part: ChunkedMessageEnd): Unit =
-      state match {
-        case WaitingForChunkHandlerBuffering(timeout, receiveds) ⇒ state = WaitingForChunkHandlerReceivedAll(timeout, receiveds.enqueue(part))
-        case ReceivingRequestChunks(chunkHandler) ⇒
-          state = WaitingForResponse(chunkHandler)
-          downstreamCommandPL(Pipeline.Tell(chunkHandler, part, receiverRef))
-        case x if nextInChain.isEmpty ⇒ throw new IllegalArgumentException(s"$this Didn't expect ChunkedMessageEnd in state $state")
-        case _                        ⇒ nextInChain handleChunkedMessageEnd part
-      }
+    def handleChunkedMessageEnd(part: ChunkedMessageEnd): Unit = state match {
+      case WaitingForChunkHandlerBuffering(timeout, receiveds) ⇒
+        state = WaitingForChunkHandlerReceivedAll(timeout, receiveds.enqueue(part))
+      case ReceivingRequestChunks(chunkHandler) ⇒
+        state = WaitingForResponse(chunkHandler)
+        downstreamCommandPL(Pipeline.Tell(chunkHandler, part, receiverRef))
+      case _ if nextInChain.isEmpty ⇒ throw new IllegalArgumentException(s"$this Didn't expect ChunkedMessageEnd in state $state")
+      case _                        ⇒ nextInChain handleChunkedMessageEnd part
+    }
 
     def handleSentAckAndReturnNextUnconfirmed(ev: AckEventWithReceiver) = {
       if (!ev.ack.isInstanceOf[NoAck]) downstreamCommandPL(Pipeline.Tell(ev.receiver, ev.ack, receiverRef))
@@ -213,8 +213,7 @@ private trait OpenRequestComponent { component ⇒
       val responsePart = part.messagePart.asInstanceOf[HttpResponsePart]
       val ack = AckEventWithReceiver(part.ack.getOrElse(NoAck), responsePart, context.sender)
       pendingSentAcks += 1
-      val cmd = ResponsePartRenderingContext(responsePart, request.method, request.protocol,
-        closeAfterResponseCompletion, ack)
+      val cmd = ResponsePartRenderingContext(responsePart, request.method, request.protocol, closeAfterResponseCompletion, ack)
       downstreamCommandPL(cmd)
     }
 
@@ -242,8 +241,7 @@ private trait OpenRequestComponent { component ⇒
     def nextIfNoAcksPending = throw new IllegalStateException
 
     // commands
-    def handleResponseEndAndReturnNextOpenRequest(part: HttpMessagePartWrapper) =
-      handleResponsePart(part)
+    def handleResponseEndAndReturnNextOpenRequest(part: HttpMessagePartWrapper) = handleResponsePart(part)
 
     def handleResponsePart(part: HttpMessagePartWrapper): Nothing =
       throw new IllegalStateException("Received ResponsePart '" + part + "' for non-existing request")

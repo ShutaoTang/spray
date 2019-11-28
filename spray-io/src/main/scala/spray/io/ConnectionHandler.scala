@@ -45,14 +45,12 @@ trait ConnectionHandler extends Actor with ActorLogging {
   }
   //#
 
-  def running(tcpConnection: ActorRef, stage: PipelineStage, remoteAddress: InetSocketAddress,
-              localAddress: InetSocketAddress): Receive = {
+  def running(tcpConnection: ActorRef, stage: PipelineStage, remoteAddress: InetSocketAddress, localAddress: InetSocketAddress): Receive = {
     val pipelineContext = PipelineContext(context, remoteAddress, localAddress, log)
     running(tcpConnection, stage, pipelineContext)
   }
 
-  def running[C <: PipelineContext](tcpConnection: ActorRef, pipelineStage: RawPipelineStage[C],
-                                    pipelineContext: C): Receive = {
+  def running[C <: PipelineContext](tcpConnection: ActorRef, pipelineStage: RawPipelineStage[C], pipelineContext: C): Receive = {
     val stage = pipelineStage(pipelineContext, baseCommandPipeline(tcpConnection), baseEventPipeline(tcpConnection))
     running(tcpConnection, stage)
   }
