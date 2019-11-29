@@ -144,7 +144,7 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
     }
 
   def shutdownListeners(commanders: Set[ActorRef]): Unit = {
-    listeners foreach { x ⇒ x ! Http.Unbind }
+    listeners.foreach { listener ⇒ listener ! Http.Unbind }
     context.become(unbinding(listeners.toSet, commanders))
     if (listeners.isEmpty) self ! Http.Unbound
   }
@@ -156,7 +156,7 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
       case Http.Unbound ⇒
         val stillRunning = running - sender
         if (stillRunning.isEmpty) {
-          commanders foreach (_ ! Http.ClosedAll)
+          commanders.foreach { commander ⇒ commander ! Http.ClosedAll }
           context.become(receive)
         } else context.become(unbinding(stillRunning, commanders))
 
@@ -249,7 +249,7 @@ private[can] object HttpManager {
             case Some(ProxySettings(proxyHost, proxyPort, _)) ⇒ ClientConnectionType.Proxied(proxyHost, proxyPort)
             case None                                         ⇒ ClientConnectionType.Direct
           }
-        case x ⇒ x
+        case otherType ⇒ otherType
       }
     normalizedSetup.copy(connectionType = resolved)
   }

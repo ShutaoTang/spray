@@ -24,9 +24,7 @@ import spray.can.{ HttpExt, Http }
 import spray.io.TickGenerator.Tick
 import spray.util.Timestamp
 
-private[can] class HttpListener(bindCommander: ActorRef,
-                                bind: Http.Bind,
-                                httpSettings: HttpExt#Settings) extends Actor with ActorLogging {
+private[can] class HttpListener(bindCommander: ActorRef, bind: Http.Bind, httpSettings: HttpExt#Settings) extends Actor with ActorLogging {
   import context.system
   import bind._
 
@@ -86,14 +84,14 @@ private[can] class HttpListener(bindCommander: ActorRef,
 
   def connected(tcpListener: ActorRef): Receive = {
     case Tcp.Connected(remoteAddress, localAddress) ⇒
-      val tcpConnection = sender  // where sender() is a TcpConnection
+      val tcpConnection = sender // where sender() is a TcpConnection
       context.actorOf(
         props = Props(new HttpServerConnection(tcpConnection, listener, pipelineStage, remoteAddress, localAddress, settings))
           .withDispatcher(httpSettings.ConnectionDispatcher),
         name = connectionCounter.next().toString)
 
-    case Http.GetStats            ⇒ statsHolder foreach { holder ⇒ sender ! holder.toStats }
-    case Http.ClearStats          ⇒ statsHolder foreach { _.clear() }
+    case Http.GetStats            ⇒ statsHolder.foreach { holder ⇒ sender ! holder.toStats }
+    case Http.ClearStats          ⇒ statsHolder.foreach { _.clear() }
 
     case Http.Unbind(timeout)     ⇒ unbind(tcpListener, Set(sender), timeout)
 

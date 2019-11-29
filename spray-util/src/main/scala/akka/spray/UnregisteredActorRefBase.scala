@@ -71,12 +71,10 @@ abstract class UnregisteredActorRefBase(val provider: ActorRefProvider) extends 
     case _                            ⇒ handle(message)
   }
 
-
   override def sendSystemMessage(message: SystemMessage): Unit = message match {
     case _: Terminate ⇒ stop()
     case _            ⇒
   }
-
 
   override def isTerminated: Boolean = state match {
     case Stopped | _: StoppedWithPath ⇒ true

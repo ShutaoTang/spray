@@ -82,8 +82,7 @@ object Http extends ExtensionKey[HttpExt] {
       else copy(settings = Some(HostConnectorSettings(actorSystem)))
   }
   object HostConnectorSetup {
-    def apply(host: String, port: Int, sslEncryption: Boolean)
-             (implicit refFactory: ActorRefFactory, sslEngineProvider: ClientSSLEngineProvider): HostConnectorSetup =
+    def apply(host: String, port: Int, sslEncryption: Boolean)(implicit refFactory: ActorRefFactory, sslEngineProvider: ClientSSLEngineProvider): HostConnectorSetup =
       apply(host, port, sslEncryption, Nil).normalized
   }
 

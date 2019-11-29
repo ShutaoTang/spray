@@ -132,8 +132,7 @@ private trait OpenRequestComponent { component ⇒
 
     def timeoutResponse(request: HttpRequest): HttpResponse = HttpResponse(
       status = 500,
-      entity = "Ooops! The server was not able to produce a timely response to your request.\n" +
-        "Please try again in a short while!")
+      entity = "Ooops! The server was not able to produce a timely response to your request.\nPlease try again in a short while!")
 
     /***** COMMANDS *****/
 
@@ -152,7 +151,7 @@ private trait OpenRequestComponent { component ⇒
     }
 
     def enqueueCommand(command: Command, sender: ActorRef): Unit =
-      responseQueue = responseQueue enqueue ((command, sender))
+      responseQueue = responseQueue.enqueue((command, sender))
 
     def registerChunkHandler(handler: ActorRef): Unit = {
       def dispatch(part: HttpRequestPart) = downstreamCommandPL(Pipeline.Tell(handler, part, receiverRef))
