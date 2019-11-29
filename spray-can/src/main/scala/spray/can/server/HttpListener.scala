@@ -86,9 +86,9 @@ private[can] class HttpListener(bindCommander: ActorRef,
 
   def connected(tcpListener: ActorRef): Receive = {
     case Tcp.Connected(remoteAddress, localAddress) ⇒
-      val conn = sender
+      val tcpConnection = sender  // where sender() is a TcpConnection
       context.actorOf(
-        props = Props(new HttpServerConnection(conn, listener, pipelineStage, remoteAddress, localAddress, settings))
+        props = Props(new HttpServerConnection(tcpConnection, listener, pipelineStage, remoteAddress, localAddress, settings))
           .withDispatcher(httpSettings.ConnectionDispatcher),
         name = connectionCounter.next().toString)
 

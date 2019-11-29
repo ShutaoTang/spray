@@ -1,14 +1,14 @@
 package spray.examples
 
 import scala.concurrent.duration._
-import akka.actor.Actor
+import akka.actor.{Actor, ActorLogging}
 import spray.can.Http
 import spray.json._
 import spray.http._
 import HttpMethods._
 import StatusCodes._
 
-class BenchmarkService extends Actor {
+class BenchmarkService extends Actor with ActorLogging {
   import context.dispatcher // ExecutionContext for scheduler
   import Uri._
   import Uri.Path._
@@ -26,29 +26,33 @@ class BenchmarkService extends Actor {
   }
 
   def receive: Receive = {
-    // when a new connection comes in we register ourselves as the connection handler
-    case _: Http.Connected => sender ! Http.Register(self, fastPath = fastPath)
-
     /**
      * Note that below sender() is
      *   LocalActorRef --> Actor[akka://default/user/IO-HTTP/listener-0/3#-1099396836]
      * see [[spray.can.server.HttpListener]]
      */
-    case HttpRequest(GET, Uri.Path("/"), _, _, _) => sender ! HttpResponse(
-      entity = HttpEntity(MediaTypes.`text/html`,
-        <html>
-          <body>
-            <h1>Tiny <i>spray-can</i> benchmark server</h1>
-            <p>Defined resources:</p>
-            <ul>
-              <li><a href="/ping">/ping</a></li>
-              <li><a href="/fast-ping">/fast-ping</a></li>
-              <li><a href="/json">/json</a></li>
-              <li><a href="/fast-json">/fast-json</a></li>
-              <li><a href="/stop">/stop</a></li>
-            </ul>
-          </body>
-        </html>.toString()
+    // when a new connection comes in we register ourselves as the connection handler
+    case _: Http.Connected =>
+      log.info("message Http.Connected from sender() >>> {}", sender)
+      sender ! Http.Register(self, fastPath = fastPath)
+
+    case HttpRequest(GET, Uri.Path("/"), _, _, _) =>
+      log.info("message HttpRequest from sender >>> {}}", sender)
+      sender ! HttpResponse(
+        entity = HttpEntity(MediaTypes.`text/html`,
+          <html>
+            <body>
+              <h1>Tiny <i>spray-can</i> benchmark server</h1>
+              <p>Defined resources:</p>
+              <ul>
+                <li><a href="/ping">/ping</a></li>
+                <li><a href="/fast-ping">/fast-ping</a></li>
+                <li><a href="/json">/json</a></li>
+                <li><a href="/fast-json">/fast-json</a></li>
+                <li><a href="/stop">/stop</a></li>
+              </ul>
+            </body>
+          </html>.toString()
       )
     )
 

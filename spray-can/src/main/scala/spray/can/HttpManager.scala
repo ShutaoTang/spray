@@ -85,19 +85,19 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
 
   def withTerminationManagement(behavior: Receive): Receive = ({
     case ev @ Terminated(child) ⇒
-      if (listeners contains child)
-        listeners = listeners filter (_ != child)
-      else if (connectors exists (_._2 == child))
-        connectors = connectors filter { _._2 != child }
+      if (listeners.contains(child))
+        listeners = listeners.filter(_ != child)
+      else if (connectors.exists(_._2 == child))
+        connectors = connectors.filter { _._2 != child }
       else
-        settingsGroups = settingsGroups filter { _._2 != child }
+        settingsGroups = settingsGroups.filter { _._2 != child }
       behavior.applyOrElse(ev, (_: Terminated) ⇒ ())
 
     case HttpHostConnector.DemandIdleShutdown ⇒
       val hostConnector = sender
       var sendPoisonPill = true
-      connectors = connectors filter {
-        case (x: ProxyConnectorSetup, proxiedConnector) if x.proxyConnector == hostConnector ⇒
+      connectors = connectors.filter {
+        case (setup: ProxyConnectorSetup, proxiedConnector) if setup.proxyConnector == hostConnector ⇒
           proxiedConnector ! HttpHostConnector.DemandIdleShutdown
           sendPoisonPill = false // the PoisonPill will be sent by the proxiedConnector
           false
@@ -221,9 +221,13 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
 }
 
 private[can] object HttpManager {
-  private class ProxyConnectorSetup(host: String, port: Int, sslEncryption: Boolean,
+
+  private class ProxyConnectorSetup(host: String,
+                                    port: Int,
+                                    sslEncryption: Boolean,
                                     options: immutable.Traversable[Inet.SocketOption],
-                                    settings: Option[HostConnectorSettings], connectionType: ClientConnectionType,
+                                    settings: Option[HostConnectorSettings],
+                                    connectionType: ClientConnectionType,
                                     defaultHeaders: List[HttpHeader], val proxyConnector: ActorRef)
       extends HostConnectorSetup(host, port, sslEncryption, options, settings, connectionType, defaultHeaders)
 
