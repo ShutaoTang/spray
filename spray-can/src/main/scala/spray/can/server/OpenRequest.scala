@@ -159,27 +159,29 @@ private trait OpenRequestComponent { component ⇒
 
       downstreamCommandPL(Tcp.ResumeReading) // counter-part to receiving ChunkedRequestStart in ServerFrontend
 
-      state =
-        state match {
-          case WaitingForChunkHandlerBuffering(_, receiveds) ⇒ { receiveds.foreach(dispatch); ReceivingRequestChunks(handler) }
-          case WaitingForChunkHandlerReceivedAll(_, receiveds) ⇒ { receiveds.foreach(dispatch); WaitingForResponse(handler) }
-          case x ⇒ throw new IllegalStateException("Didn't expect " + x)
-        }
+      state = state match {
+        case WaitingForChunkHandlerBuffering(_, receiveds) ⇒
+          receiveds.foreach(dispatch)
+          ReceivingRequestChunks(handler)
+        case WaitingForChunkHandlerReceivedAll(_, receiveds) ⇒
+          receiveds.foreach(dispatch)
+          WaitingForResponse(handler)
+        case x ⇒ throw new IllegalStateException("Didn't expect " + x)
+      }
     }
 
     /***** EVENTS *****/
 
-    def handleMessageChunk(chunk: MessageChunk): Unit =
-      state match {
-        case WaitingForChunkHandlerBuffering(timeout, receiveds) ⇒
-          state = WaitingForChunkHandlerBuffering(timeout, receiveds.enqueue(chunk))
-        case ReceivingRequestChunks(chunkHandler) ⇒
-          downstreamCommandPL(Pipeline.Tell(chunkHandler, chunk, receiverRef))
-        case _ if nextInChain.isEmpty ⇒
-          throw new IllegalArgumentException(s"$this Didn't expect message chunks in state $state")
-        case _ ⇒
-          nextInChain handleMessageChunk chunk
-      }
+    def handleMessageChunk(chunk: MessageChunk): Unit = state match {
+      case WaitingForChunkHandlerBuffering(timeout, receiveds) ⇒
+        state = WaitingForChunkHandlerBuffering(timeout, receiveds.enqueue(chunk))
+      case ReceivingRequestChunks(chunkHandler) ⇒
+        downstreamCommandPL(Pipeline.Tell(chunkHandler, chunk, receiverRef))
+      case _ if nextInChain.isEmpty ⇒
+        throw new IllegalArgumentException(s"$this Didn't expect message chunks in state $state")
+      case _ ⇒
+        nextInChain.handleMessageChunk(chunk)
+    }
 
     def handleChunkedMessageEnd(part: ChunkedMessageEnd): Unit = state match {
       case WaitingForChunkHandlerBuffering(timeout, receiveds) ⇒
@@ -198,14 +200,16 @@ private trait OpenRequestComponent { component ⇒
       if (pendingSentAcks == 0) nextInChain else this
     }
 
-    def closedEventHandlers: Set[ActorRef] =
-      nextInChain.closedEventHandlers + (state match {
+    def closedEventHandlers: Set[ActorRef] = {
+      val handler = state match {
         case ReceivingRequestChunks(chunkHandler)   ⇒ chunkHandler
         case WaitingForResponse(handler, _)         ⇒ handler
         case StreamingResponseChunks(lastSender)    ⇒ lastSender
         case WaitingForFinalResponseAck(lastSender) ⇒ lastSender
         case _                                      ⇒ context.handler
-      })
+      }
+      nextInChain.closedEventHandlers + handler
+    }
 
     /***** PRIVATE *****/
 
@@ -220,8 +224,8 @@ private trait OpenRequestComponent { component ⇒
     private def responsesQueued = responseQueue != null && responseQueue.nonEmpty
 
     private def format(part: HttpMessagePart) = part match {
-      case x: HttpRequestPart with HttpMessageStart ⇒
-        val request = x.message.asInstanceOf[HttpRequest]
+      case part: HttpRequestPart with HttpMessageStart ⇒
+        val request = part.message.asInstanceOf[HttpRequest]
         s"${request.method} request to ${request.uri}"
       case MessageChunk(body, _) ⇒ body.length.toString + " byte request chunk"
       case x                     ⇒ x.toString
