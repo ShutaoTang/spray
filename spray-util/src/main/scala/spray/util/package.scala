@@ -17,9 +17,10 @@
 package spray
 
 import scala.language.experimental.macros
-
+import scala.language.implicitConversions
+import scala.annotation.tailrec
 import java.nio.ByteBuffer
-import java.io.{ InputStream, File }
+import java.io.{ File, InputStream }
 import java.nio.charset.Charset
 import com.typesafe.config.Config
 import scala.concurrent.duration.Duration
@@ -32,7 +33,6 @@ import util.pimps._
 
 package object util {
 
-  val EOL = System.getProperty("line.separator") // TODO: remove since not used anymore
   val UTF8 = Charset.forName("UTF8")
   val US_ASCII = Charset.forName("US-ASCII")
   val ISO88591 = Charset.forName("ISO-8859-1")
@@ -52,12 +52,12 @@ package object util {
    */
   def requirePositive(duration: Duration): Duration = macro Macros.requirePositive
 
-  def actorSystem(implicit refFactory: ActorRefFactory): ExtendedActorSystem =
-    refFactory match {
-      case x: ActorContext        ⇒ actorSystem(x.system)
-      case x: ExtendedActorSystem ⇒ x
-      case x                      ⇒ throw new IllegalArgumentException("Unsupported ActorRefFactory implementation: " + refFactory)
-    }
+  @tailrec
+  def actorSystem(implicit refFactory: ActorRefFactory): ExtendedActorSystem = refFactory match {
+    case context: ActorContext       ⇒ actorSystem(context.system)
+    case system: ExtendedActorSystem ⇒ system
+    case _                           ⇒ throw new IllegalArgumentException("Unsupported ActorRefFactory implementation: " + refFactory)
+  }
 
   // implicits
   implicit def pimpActorSystem(system: ActorSystem): PimpedActorSystem = new PimpedActorSystem(system)
