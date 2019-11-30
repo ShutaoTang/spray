@@ -83,7 +83,9 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
   def newHttpListener(commander: ActorRef, bind: Http.Bind, httpSettings: HttpExt#Settings) =
     new HttpListener(commander, bind, httpSettings)
 
-  def withTerminationManagement(behavior: Receive): Receive = ({
+  def withTerminationManagement(behavior: Receive): Receive = predefinedBehaviors(behavior) orElse behavior
+
+  def predefinedBehaviors(behavior: Receive): Receive = {
     case ev @ Terminated(child) ⇒
       if (listeners.contains(child))
         listeners = listeners.filter(_ != child)
@@ -105,7 +107,7 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
         case _                    ⇒ true
       }
       if (sendPoisonPill) hostConnector ! PoisonPill
-  }: Receive) orElse behavior
+  }
 
   def shutdownSettingsGroups(cmd: Http.CloseAll, commanders: Set[ActorRef]): Unit =
     if (settingsGroups.nonEmpty) {

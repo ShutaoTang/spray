@@ -31,7 +31,7 @@ trait RawPipelineStageTest { test ⇒
 
   final val testConf: Config = ConfigFactory.parseString("""
     akka {
-      event-handlers = ["akka.testkit.TestEventListener"]
+      logger = ["akka.testkit.TestEventListener"]
       loglevel = "WARNING"
       stdout-loglevel = "WARNING"
     }""")

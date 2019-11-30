@@ -31,7 +31,7 @@ import spray.can.TestSupport
 
 class ResponseParserSpec extends Specification {
   val testConf: Config = ConfigFactory.parseString("""
-    akka.event-handlers = ["akka.testkit.TestEventListener"]
+    akka.logger = ["akka.testkit.TestEventListener"]
     akka.loglevel = WARNING
     spray.can.parsing.max-response-reason-length = 21
     spray.can.parsing.incoming-auto-chunking-threshold-size = 20""")

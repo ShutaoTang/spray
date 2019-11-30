@@ -35,7 +35,7 @@ import StatusCodes._
 class SprayCanClientSpec extends Specification with NoTimeConversions {
 
   val testConf: Config = ConfigFactory.parseString("""
-    akka.event-handlers = ["akka.testkit.TestEventListener"]
+    akka.logger = ["akka.testkit.TestEventListener"]
     akka.loglevel = ERROR
     akka.io.tcp.trace-logging = off
     spray.can.client.request-timeout = 500ms

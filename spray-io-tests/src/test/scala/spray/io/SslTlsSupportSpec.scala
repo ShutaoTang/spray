@@ -38,7 +38,7 @@ class SslTlsSupportSpec extends Specification with NoTimeConversions {
   implicit val timeOut: Timeout = 1.second
   val testConf: Config = ConfigFactory.parseString("""
     akka {
-      event-handlers = ["akka.testkit.TestEventListener"]
+      logger = ["akka.testkit.TestEventListener"]
       loglevel = WARNING
       io.tcp.trace-logging = off
     }""")

@@ -30,7 +30,7 @@ import scala.annotation.tailrec
 
 class HttpHeaderParserSpec extends Specification {
   val testConf: Config = ConfigFactory.parseString("""
-    akka.event-handlers = ["akka.testkit.TestEventListener"]
+    akka.logger = ["akka.testkit.TestEventListener"]
     akka.loglevel = WARNING
     spray.can.parsing.max-header-name-length = 20
     spray.can.parsing.max-header-value-length = 21

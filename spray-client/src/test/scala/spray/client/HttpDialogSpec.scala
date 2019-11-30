@@ -31,7 +31,7 @@ import spray.http._
 class HttpDialogSpec extends Specification with NoTimeConversions {
   val testConf = ConfigFactory.parseString("""
     akka {
-      event-handlers = ["akka.testkit.TestEventListener"]
+      logger = ["akka.testkit.TestEventListener"]
       loglevel = WARNING
     }""")
   implicit val system = ActorSystem(Utils.actorSystemNameFrom(getClass), testConf)

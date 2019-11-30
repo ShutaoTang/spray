@@ -39,7 +39,7 @@ import spray.io.CommandWrapper
 class SprayCanServerSpec extends Specification with NoTimeConversions {
   val testConf: Config = ConfigFactory.parseString("""
     akka {
-      event-handlers = ["akka.testkit.TestEventListener"]
+      logger = ["akka.testkit.TestEventListener"]
       loglevel = ERROR
       io.tcp.trace-logging = off
     }

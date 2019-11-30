@@ -24,7 +24,7 @@ class RedirectionIntegrationSpec extends Specification with NoTimeConversions {
 
   val testConf = ConfigFactory.parseString("""
     akka {
-      event-handlers = ["akka.testkit.TestEventListener"]
+      logger = ["akka.testkit.TestEventListener"]
       loglevel = WARNING
     }
     spray.can {

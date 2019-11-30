@@ -36,7 +36,7 @@ import spray.util._
 class HttpHostConnectorSpec extends Specification with NoTimeConversions {
   implicit val timeout: Timeout = 5.seconds
   val testConf = ConfigFactory.parseString("""
-    akka.event-handlers = ["akka.testkit.TestEventListener"]
+    akka.logger = ["akka.testkit.TestEventListener"]
     akka.loglevel = WARNING
     akka.io.tcp.trace-logging = off
     spray.can.host-connector.max-retries = 4
