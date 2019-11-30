@@ -25,7 +25,7 @@ import spray.io.TickGenerator.Tick
 import spray.util.Timestamp
 
 private[can] class HttpListener(bindCommander: ActorRef, bind: Http.Bind, httpSettings: HttpExt#Settings) extends Actor with ActorLogging {
-  import context.system
+  import context.system // used as implicit parameter of IO.apply(Tcp)(implicit system: ActorSystem)
   import bind._
 
   private val connectionCounter = Iterator from 0
@@ -51,7 +51,7 @@ private[can] class HttpListener(bindCommander: ActorRef, bind: Http.Bind, httpSe
       log.info("Bound to {}", endpoint)
       bindCommander ! bound
       context.setReceiveTimeout(Duration.Undefined)
-      context.become(connected(sender))
+      context.become(connected(sender)) // here, sender() is an instance of TcpListener
 
     case Tcp.CommandFailed(_: Tcp.Bind) ⇒
       log.warning("Bind to {} failed", endpoint)

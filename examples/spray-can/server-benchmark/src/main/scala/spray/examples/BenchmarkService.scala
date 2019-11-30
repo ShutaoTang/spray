@@ -29,7 +29,10 @@ class BenchmarkService extends Actor with ActorLogging {
     /**
      * Note that below sender() is
      *   LocalActorRef --> Actor[akka://default/user/IO-HTTP/listener-0/3#-1099396836]
-     * see [[spray.can.server.HttpListener]]
+     *   ActorPath of parent --> /user/IO-HTTP/listener-0/
+     *   name                --> 3#-1099396836
+     * which is an instance of HttpServerConnection and it is the child of HttpListener.
+     * see [[spray.can.server.HttpListener]] and [[spray.can.server.HttpServerConnection]]
      */
     // when a new connection comes in we register ourselves as the connection handler
     case _: Http.Connected =>

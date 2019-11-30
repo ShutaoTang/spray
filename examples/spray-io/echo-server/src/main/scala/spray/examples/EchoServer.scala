@@ -13,12 +13,12 @@ object EchoServer extends App {
   implicit val system = ActorSystem("echo-server")
 
   // and our actual server "service" actor
-  val server = system.actorOf(Props(new EchoServerActor), name = "echo-server")
+  val server = system.actorOf(Props[EchoServerActor], name = "echo-server")
 
   // we bind the server to a port on localhost and hook
   // in a continuation that informs us when bound
   val endpoint = new InetSocketAddress("localhost", 23456)
-  implicit val bindingTimeout = Timeout(1.second)
+  implicit val bindingTimeout = Timeout(10.second)
   import system.dispatcher // execution context for the future
 
   val boundFuture = IO(Tcp) ? Tcp.Bind(server, endpoint)
