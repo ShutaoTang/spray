@@ -20,7 +20,6 @@ package server
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 import akka.io.Tcp
-import spray.can.rendering.ResponsePartRenderingContext
 import spray.http._
 import spray.io._
 import RequestParsing._

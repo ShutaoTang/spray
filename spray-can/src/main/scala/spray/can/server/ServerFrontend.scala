@@ -176,12 +176,13 @@ private object ServerFrontend {
 
   private object WriteCommandWithLastAck {
     def unapply(cmd: Tcp.Command): Option[Event] = {
-      @tailrec def lastAck(c: Tcp.Command): Option[Event] =
-        c match {
-          case x: Tcp.SimpleWriteCommand  ⇒ Some(x.ack)
-          case Tcp.CompoundWrite(_, tail) ⇒ lastAck(tail)
-          case _                          ⇒ None
-        }
+      @tailrec
+      def lastAck(cmd: Tcp.Command): Option[Event] = cmd match {
+        case writeCommand: Tcp.SimpleWriteCommand ⇒ Some(writeCommand.ack)
+        case Tcp.CompoundWrite(_, tail)           ⇒ lastAck(tail)
+        case _                                    ⇒ None
+      }
+      // -----------
       lastAck(cmd)
     }
   }

@@ -26,7 +26,6 @@ import spray.can.parsing._
 import spray.http._
 import spray.util._
 import spray.io._
-import scala.concurrent.duration._
 
 private[can] object RequestParsing {
 
@@ -48,27 +47,27 @@ private[can] object RequestParsing {
 
           def normalize(req: HttpRequest) = req.withEffectiveUri(https, settings.defaultHostHeader)
 
-          @tailrec def handleParsingResult(result: Result): Unit =
-            result match {
-              case Result.NeedMoreData(next) ⇒ parser = next // wait for the next packet
+          @tailrec
+          def handleParsingResult(result: Result): Unit = result match {
+            case Result.NeedMoreData(next) ⇒ parser = next // wait for the next packet
 
-              case Result.Emit(part, closeAfterResponseCompletion, continue) ⇒
-                val event = part match {
-                  case x: HttpRequest         ⇒ HttpMessageStartEvent(normalize(x), closeAfterResponseCompletion)
-                  case x: ChunkedRequestStart ⇒ HttpMessageStartEvent(ChunkedRequestStart(normalize(x.request)), closeAfterResponseCompletion)
-                  case x                      ⇒ Http.MessageEvent(x)
-                }
-                eventPL(event)
-                handleParsingResult(continue())
+            case Result.Emit(part, closeAfterResponseCompletion, continue) ⇒
+              val event = part match {
+                case x: HttpRequest         ⇒ HttpMessageStartEvent(normalize(x), closeAfterResponseCompletion)
+                case x: ChunkedRequestStart ⇒ HttpMessageStartEvent(ChunkedRequestStart(normalize(x.request)), closeAfterResponseCompletion)
+                case x                      ⇒ Http.MessageEvent(x)
+              }
+              eventPL(event)
+              handleParsingResult(continue())
 
-              case Result.Expect100Continue(continue) ⇒
-                commandPL(Status100ContinueResponse)
-                handleParsingResult(continue())
+            case Result.Expect100Continue(continue) ⇒
+              commandPL(Status100ContinueResponse)
+              handleParsingResult(continue())
 
-              case e @ Result.ParsingError(status, info) ⇒ handleError(status, info)
+            case Result.ParsingError(status, info) ⇒ handleError(status, info)
 
-              case Result.IgnoreAllFurtherInput          ⇒
-            }
+            case Result.IgnoreAllFurtherInput      ⇒
+          }
 
           def handleError(status: StatusCode, info: ErrorInfo): Unit = {
             val _info = if (settings.verboseErrorLogging) info.formatPretty else info.summary

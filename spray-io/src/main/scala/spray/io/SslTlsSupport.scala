@@ -389,7 +389,7 @@ object SslTlsSupport {
             else result
           }
         cmd match {
-          case _@ Tcp.Write.empty                      ⇒ Stream.empty
+          case Tcp.Write.empty                         ⇒ Stream.empty
           case w @ Tcp.Write(bytes, _)                 ⇒ chunkStream(HttpData(bytes), w)
           case w @ Tcp.WriteFile(path, offset, len, _) ⇒ chunkStream(HttpData.fromFile(path, offset, len), w)
           case Tcp.CompoundWrite(head, tail)           ⇒ writeChunkStream(head).append(writeChunkStream(tail))
