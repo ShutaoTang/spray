@@ -22,16 +22,22 @@ import akka.io.Tcp
 import spray.util.LoggingContext
 import spray.http._
 import StatusCodes._
+import akka.actor.Actor.Receive
 
 trait HttpServiceBase extends Directives {
 
   /**
    * Supplies the actor behavior for executing the given route.
+   * Note that exceptionHandler ~ log are all implicit parameters or arguments
    */
-  def runRoute(route: Route)(implicit eh: ExceptionHandler, rh: RejectionHandler, ac: ActorContext,
-                             rs: RoutingSettings, log: LoggingContext): Actor.Receive = {
-    val sealedExceptionHandler = eh orElse ExceptionHandler.default
-    val sealedRoute = sealRoute(route)(sealedExceptionHandler, rh)
+  def runRoute(route: Route)(implicit exceptionHandler: ExceptionHandler,
+                             rejectionHandler: RejectionHandler,
+                             actorContext: ActorContext,
+                             settings: RoutingSettings,
+                             log: LoggingContext): Receive = {
+    val sealedExceptionHandler = exceptionHandler orElse ExceptionHandler.default
+    val sealedRoute = sealRoute(route)(sealedExceptionHandler, rejectionHandler)
+
     def runSealedRoute(ctx: RequestContext): Unit =
       try sealedRoute(ctx)
       catch {
@@ -42,18 +48,18 @@ trait HttpServiceBase extends Directives {
 
     {
       case request: HttpRequest ⇒
-        val ctx = RequestContext(request, ac.sender, request.uri.path).withDefaultSender(ac.self)
+        val ctx = RequestContext(request, actorContext.sender, request.uri.path).withDefaultSender(actorContext.self)
         runSealedRoute(ctx)
 
       case ctx: RequestContext ⇒ runSealedRoute(ctx)
 
       case Tcp.Connected(_, _) ⇒
         // by default we register ourselves as the handler for a new connection
-        ac.sender ! Tcp.Register(ac.self)
+        actorContext.sender ! Tcp.Register(actorContext.self)
 
       case x: Tcp.ConnectionClosed        ⇒ onConnectionClosed(x)
 
-      case Timedout(request: HttpRequest) ⇒ runRoute(timeoutRoute)(eh, rh, ac, rs, log)(request)
+      case Timedout(request: HttpRequest) ⇒ runRoute(timeoutRoute)(exceptionHandler, rejectionHandler, actorContext, settings, log)(request)
     }
   }
 

@@ -82,6 +82,7 @@ object Http extends ExtensionKey[HttpExt] {
       else copy(settings = Some(HostConnectorSettings(actorSystem)))
   }
   object HostConnectorSetup {
+    // this sign denotes that refFactory, sslEngineProvider are all implicit parameters or arguments
     def apply(host: String, port: Int, sslEncryption: Boolean)(implicit refFactory: ActorRefFactory, sslEngineProvider: ClientSSLEngineProvider): HostConnectorSetup =
       apply(host, port, sslEncryption, Nil).normalized
   }
