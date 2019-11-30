@@ -35,8 +35,8 @@ private[can] class HttpListener(bindCommander: ActorRef, bind: Http.Bind, httpSe
 
   context.watch(listener)
 
+  // HttpListener sends a Tcp.Bind(...) message to TcpManager when instantiation
   log.debug("Binding to {}", endpoint)
-
   IO(Tcp) ! Tcp.Bind(self, endpoint, backlog, options)
 
   context.setReceiveTimeout(settings.bindTimeout)
@@ -44,12 +44,12 @@ private[can] class HttpListener(bindCommander: ActorRef, bind: Http.Bind, httpSe
   // we cannot sensibly recover from crashes
   override def supervisorStrategy = SupervisorStrategy.stoppingStrategy
 
-  def receive = binding
+  def receive: Receive = binding
 
   def binding: Receive = {
-    case x: Tcp.Bound ⇒
+    case bound: Tcp.Bound ⇒
       log.info("Bound to {}", endpoint)
-      bindCommander ! x
+      bindCommander ! bound
       context.setReceiveTimeout(Duration.Undefined)
       context.become(connected(sender))
 
@@ -68,6 +68,7 @@ private[can] class HttpListener(bindCommander: ActorRef, bind: Http.Bind, httpSe
       bindCommander ! Http.CommandFailed(bind)
       context.become(bindingAborted(Set(sender)))
   }
+
   /** Waiting for the bind to execute to close it down instantly afterwards */
   def bindingAborted(unbindCommanders: Set[ActorRef]): Receive = {
     case _: Tcp.Bound ⇒ unbind(sender, unbindCommanders, Duration.Zero)
@@ -125,6 +126,7 @@ private[can] class HttpListener(bindCommander: ActorRef, bind: Http.Bind, httpSe
       // a latter Unbind overrides a previous timeout
       context.become(unbinding(commanders + sender, timeout))
   }
+
   /** Wait for a last grace period to expire before shutting us (and our children down) */
   def gracePeriod(timeout: Timestamp): Receive = {
     case Tick ⇒

@@ -16,9 +16,7 @@ object PreventHalfClosedConnections {
       def isSslTlsSupportEnabled(context: SslTlsContext) =
         sslEnabled && context.sslEngine.isDefined
 
-      def applyIfEnabled(context: SslTlsContext,
-                         commandPL: CPL,
-                         eventPL: EPL): Pipelines = new Pipelines with DynamicEventPipeline {
+      def applyIfEnabled(context: SslTlsContext, commandPL: CPL, eventPL: EPL) = new Pipelines with DynamicEventPipeline {
         def initialEventPipeline = connected
         def commandPipeline = commandPL
 
@@ -27,11 +25,11 @@ object PreventHalfClosedConnections {
             commandPL(Tcp.ConfirmedClose)
             eventPipeline.become(closingOurSide)
 
-          case ev ⇒ eventPL(ev)
+          case evt ⇒ eventPL(evt)
         }
         def closingOurSide: EPL = {
           case _: Tcp.ConnectionClosed ⇒ eventPL(Tcp.PeerClosed)
-          case ev                      ⇒ eventPL(ev)
+          case evt                     ⇒ eventPL(evt)
         }
       }
     }

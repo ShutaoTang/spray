@@ -206,7 +206,8 @@ case class HttpRequest(method: HttpMethod = HttpMethods.GET,
     ranges match {
       case Nil ⇒ 1.0f // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
       case x ⇒
-        @tailrec def rec(r: List[MediaRange] = x): Float = r match {
+        @tailrec
+        def rec(r: List[MediaRange] = x): Float = r match {
           case Nil          ⇒ 0f
           case head :: tail ⇒ if (head.matches(mediaType)) head.qValue else rec(tail)
         }
@@ -325,23 +326,17 @@ case class MessageChunk(data: HttpData.NonEmpty, extension: String) extends Http
 
 object MessageChunk {
   import HttpCharsets._
-  def apply(body: String): MessageChunk =
-    apply(body, "")
-  def apply(body: String, charset: HttpCharset): MessageChunk =
-    apply(body, charset, "")
-  def apply(body: String, extension: String): MessageChunk =
-    apply(body, `UTF-8`, extension)
-  def apply(body: String, charset: HttpCharset, extension: String): MessageChunk =
-    apply(HttpData(body, charset), extension)
-  def apply(bytes: Array[Byte]): MessageChunk =
-    apply(HttpData(bytes))
-  def apply(data: HttpData): MessageChunk =
-    apply(data, "")
-  def apply(data: HttpData, extension: String): MessageChunk =
-    data match {
-      case x: HttpData.NonEmpty ⇒ new MessageChunk(x, extension)
-      case _                    ⇒ throw new IllegalArgumentException("Cannot create MessageChunk with empty data")
-    }
+  def apply(body: String): MessageChunk = apply(body, "")
+  def apply(body: String, charset: HttpCharset): MessageChunk = apply(body, charset, "")
+  def apply(body: String, extension: String): MessageChunk = apply(body, `UTF-8`, extension)
+  def apply(body: String, charset: HttpCharset, extension: String): MessageChunk = apply(HttpData(body, charset), extension)
+  def apply(bytes: Array[Byte]): MessageChunk = apply(HttpData(bytes))
+  def apply(data: HttpData): MessageChunk = apply(data, "")
+
+  def apply(data: HttpData, extension: String): MessageChunk = data match {
+    case empty: HttpData.NonEmpty ⇒ new MessageChunk(empty, extension)
+    case _                        ⇒ throw new IllegalArgumentException("Cannot create MessageChunk with empty data")
+  }
 }
 
 case class ChunkedRequestStart(request: HttpRequest) extends HttpMessageStart with HttpRequestPart {
@@ -359,9 +354,10 @@ case class ChunkedResponseStart(response: HttpResponse) extends HttpMessageStart
 }
 
 object ChunkedMessageEnd extends ChunkedMessageEnd("", Nil)
-case class ChunkedMessageEnd(extension: String = "",
-                             trailer: List[HttpHeader] = Nil) extends HttpRequestPart with HttpResponsePart with HttpMessageEnd {
-  if (!trailer.isEmpty) {
+case class ChunkedMessageEnd(extension: String = "", trailer: List[HttpHeader] = Nil)
+    extends HttpRequestPart with HttpResponsePart with HttpMessageEnd {
+
+  if (trailer.nonEmpty) {
     require(trailer.forall(_.isNot("content-length")), "Content-Length header is not allowed in trailer")
     require(trailer.forall(_.isNot("transfer-encoding")), "Transfer-Encoding header is not allowed in trailer")
     require(trailer.forall(_.isNot("trailer")), "Trailer header is not allowed in trailer")

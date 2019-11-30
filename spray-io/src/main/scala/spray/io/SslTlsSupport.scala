@@ -389,7 +389,7 @@ object SslTlsSupport {
             else result
           }
         cmd match {
-          case w @ Tcp.Write.empty                     ⇒ Stream.empty
+          case _@ Tcp.Write.empty                      ⇒ Stream.empty
           case w @ Tcp.Write(bytes, _)                 ⇒ chunkStream(HttpData(bytes), w)
           case w @ Tcp.WriteFile(path, offset, len, _) ⇒ chunkStream(HttpData.fromFile(path, offset, len), w)
           case Tcp.CompoundWrite(head, tail)           ⇒ writeChunkStream(head).append(writeChunkStream(tail))
@@ -409,7 +409,9 @@ object SslTlsSupport {
       // if the original host string is an IP address.
       val method = classOf[InetSocketAddress].getMethod("getHostString")
       address ⇒ method.invoke(address).asInstanceOf[String]
-    } catch { case NonFatal(_) ⇒ _.getHostName }
+    } catch {
+      case NonFatal(_) ⇒ _.getHostName
+    }
 
   /** Event dispatched upon successful SSL handshaking. */
   case class SSLSessionEstablished(info: SSLSessionInfo) extends Event

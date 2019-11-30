@@ -51,23 +51,24 @@ private object PipeliningLimiter {
 
           def commandPipeline: CPL = commandPL
           val eventPipeline: EPL = {
-            case ev @ HttpMessageStartEvent(part, _) ⇒ handleRequestPart(ev, part)
-            case ev @ Http.MessageEvent(part)        ⇒ handleRequestPart(ev, part)
-            case ev: AckEventWithReceiver            ⇒ handleResponseAck(ev)
-            case ev                                  ⇒ eventPL(ev)
+            case evt @ HttpMessageStartEvent(part, _) ⇒ handleRequestPart(evt, part)
+            case evt @ Http.MessageEvent(part)        ⇒ handleRequestPart(evt, part)
+            case evt: AckEventWithReceiver            ⇒ handleResponseAck(evt)
+            case evt                                  ⇒ eventPL(evt)
           }
 
-          def handleRequestPart(ev: Event, part: HttpMessagePart): Unit =
+          def handleRequestPart(evt: Event, part: HttpMessagePart): Unit =
             if (openRequests < pipeliningLimit) {
               if (part.isInstanceOf[HttpMessageEnd]) openRequests += 1
-              eventPL(ev)
+              eventPL(evt)
             } else {
               commandPL(Tcp.SuspendReading)
-              parkedRequestParts = parkedRequestParts enqueue ev
+              parkedRequestParts = parkedRequestParts enqueue evt
             }
-          def handleResponseAck(ev: AckEventWithReceiver): Unit = {
+
+          def handleResponseAck(evt: AckEventWithReceiver): Unit = {
             openRequests -= 1
-            eventPL(ev)
+            eventPL(evt)
             if (parkedRequestParts.nonEmpty) {
               unparkOneRequest()
               if (parkedRequestParts.isEmpty) commandPL(Tcp.ResumeReading)

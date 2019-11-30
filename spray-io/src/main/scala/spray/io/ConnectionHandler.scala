@@ -24,16 +24,16 @@ trait ConnectionHandler extends Actor with ActorLogging {
 
   //# final-stages
   def baseCommandPipeline(tcpConnection: ActorRef): Pipeline[Command] = {
-    case x @ (_: Tcp.WriteCommand | _: Tcp.CloseCommand) ⇒ tcpConnection ! x
+    case cmd @ (_: Tcp.WriteCommand | _: Tcp.CloseCommand) ⇒ tcpConnection ! cmd
     case Pipeline.Tell(receiver, msg, sender) ⇒ receiver.tell(msg, sender)
-    case x @ (Tcp.SuspendReading | Tcp.ResumeReading | Tcp.ResumeWriting) ⇒ tcpConnection ! x
+    case cmd @ (Tcp.SuspendReading | Tcp.ResumeReading | Tcp.ResumeWriting) ⇒ tcpConnection ! cmd
     case _: Droppable ⇒ // don't warn
     case cmd ⇒ log.warning("command pipeline: dropped {}", cmd)
   }
 
   def baseEventPipeline(tcpConnection: ActorRef): Pipeline[Event] = {
-    case x: Tcp.ConnectionClosed ⇒
-      log.debug("Connection was {}, awaiting TcpConnection termination...", x)
+    case evt: Tcp.ConnectionClosed ⇒
+      log.debug("Connection was {}, awaiting TcpConnection termination...", evt)
       context.become {
         case Terminated(`tcpConnection`) ⇒
           log.debug("TcpConnection terminated, stopping")
@@ -41,7 +41,7 @@ trait ConnectionHandler extends Actor with ActorLogging {
       }
 
     case _: Droppable ⇒ // don't warn
-    case ev           ⇒ log.warning("event pipeline: dropped {}", ev)
+    case evt          ⇒ log.warning("event pipeline: dropped {}", evt)
   }
   //#
 
@@ -56,9 +56,9 @@ trait ConnectionHandler extends Actor with ActorLogging {
   }
 
   def running(tcpConnection: ActorRef, pipelines: Pipelines): Receive = {
-    case x: Command ⇒ pipelines.commandPipeline(x)
-    case x: Event   ⇒ pipelines.eventPipeline(x)
-    case x @ Terminated(`tcpConnection`) ⇒
+    case cmd: Command ⇒ pipelines.commandPipeline(cmd)
+    case evt: Event   ⇒ pipelines.eventPipeline(evt)
+    case _@ Terminated(`tcpConnection`) ⇒
       pipelines.eventPipeline(Tcp.ErrorClosed("TcpConnection actor died"))
       log.debug("TcpConnection actor died, stopping")
       context.stop(self)

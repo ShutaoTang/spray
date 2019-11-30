@@ -42,7 +42,9 @@ object SslBufferPool {
   private final val Locked = 1
 
   private[this] val state = new AtomicInteger(Unlocked)
-  @volatile private[this] var pool: List[ByteBuffer] = Nil
+
+  @volatile
+  private[this] var pool: List[ByteBuffer] = Nil
 
   /**
    * Returns the size of the current buffer pool.

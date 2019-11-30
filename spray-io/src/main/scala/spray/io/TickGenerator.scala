@@ -32,13 +32,16 @@ object TickGenerator {
       def applyIfEnabled(context: PipelineContext, commandPL: CPL, eventPL: EPL): Pipelines =
         new Pipelines {
           var next = scheduleNext()
-
           val commandPipeline = commandPL
 
           val eventPipeline: EPL = {
-            case Tick                    ⇒ { next = scheduleNext(); eventPL(Tick) }
-            case x: Tcp.ConnectionClosed ⇒ { next.cancel(); eventPL(x) }
-            case x                       ⇒ eventPL(x)
+            case Tick ⇒
+              next = scheduleNext()
+              eventPL(Tick)
+            case evt: Tcp.ConnectionClosed ⇒
+              next.cancel()
+              eventPL(evt)
+            case evt ⇒ eventPL(evt)
           }
 
           def scheduleNext() = {

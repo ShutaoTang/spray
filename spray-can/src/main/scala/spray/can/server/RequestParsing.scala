@@ -71,8 +71,8 @@ private[can] object RequestParsing {
             }
 
           def handleError(status: StatusCode, info: ErrorInfo): Unit = {
-            log.warning("Illegal request, responding with status '{}': {}", status,
-              if (settings.verboseErrorLogging) info.formatPretty else info.summary)
+            val _info = if (settings.verboseErrorLogging) info.formatPretty else info.summary
+            log.warning("Illegal request, responding with status '{}': {}", status, _info)
             val msg = if (settings.verboseErrorMessages) info.formatPretty else info.summary
             commandPL(ResponsePartRenderingContext(HttpResponse(status, msg), closeAfterResponseCompletion = true))
 
@@ -92,7 +92,7 @@ private[can] object RequestParsing {
               }
             case TickGenerator.Tick if timeout.isPast && parser == Result.IgnoreAllFurtherInput ⇒ commandPL(Tcp.Abort)
 
-            case ev ⇒ eventPL(ev)
+            case evt ⇒ eventPL(evt)
           }
         }
     }

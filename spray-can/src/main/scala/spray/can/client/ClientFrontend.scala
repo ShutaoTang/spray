@@ -53,9 +53,9 @@ private object ClientFrontend {
                 openRequests = openRequests enqueue new RequestRecord(x, context.sender, state = AwaitingChunkEnd)
               } else log.warning("Received new ChunkedRequestStart before previous chunking request was finished, ignoring...")
 
-            case Http.MessageCommand(HttpMessagePartWrapper(x: MessageChunk, ack)) if closeCommanders.isEmpty ⇒
+            case Http.MessageCommand(HttpMessagePartWrapper(part: MessageChunk, ack)) if closeCommanders.isEmpty ⇒
               if (!lastRequestComplete) {
-                render(x, openRequests.last.request.message, ack)
+                render(part, openRequests.last.request.message, ack)
               } else log.warning("Received MessageChunk outside of chunking request context, ignoring...")
 
             case Http.MessageCommand(HttpMessagePartWrapper(x: ChunkedMessageEnd, ack)) if closeCommanders.isEmpty ⇒
@@ -67,9 +67,9 @@ private object ClientFrontend {
             case Http.MessageCommand(HttpMessagePartWrapper(x: HttpRequestPart, _)) if closeCommanders.nonEmpty ⇒
               log.error("Received {} after CloseCommand, ignoring", x)
 
-            case x: Http.CloseCommand ⇒
+            case cmd: Http.CloseCommand ⇒
               closeCommanders += context.sender
-              commandPL(x)
+              commandPL(cmd)
 
             case CommandWrapper(SetRequestTimeout(timeout)) ⇒ requestTimeout = timeout
 
@@ -104,10 +104,10 @@ private object ClientFrontend {
 
             case AckAndSender(ack, sender) ⇒ dispatch(sender, ack)
 
-            case x: Tcp.ConnectionClosed ⇒
-              openRequests.foldLeft(closeCommanders)(_ + _.sender) foreach (dispatch(_, x))
-              if (x eq Tcp.PeerClosed) commandPL(Tcp.Close)
-              eventPL(x) // terminates the connection actor
+            case evt: Tcp.ConnectionClosed ⇒
+              openRequests.foldLeft(closeCommanders)(_ + _.sender) foreach (dispatch(_, evt))
+              if (evt eq Tcp.PeerClosed) commandPL(Tcp.Close)
+              eventPL(evt) // terminates the connection actor
 
             case TickGenerator.Tick ⇒
               checkForTimeout()
@@ -119,7 +119,7 @@ private object ClientFrontend {
             case Tcp.CommandFailed(Tcp.Write(_, ack)) ⇒
               log.warning("Sending of HttpRequestPart with ack {} failed, write command dropped", ack)
 
-            case ev ⇒ eventPL(ev)
+            case evt ⇒ eventPL(evt)
           }
 
           def render(part: HttpRequestPart, message: HttpMessage, ack: Option[Any]): Unit = {

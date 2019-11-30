@@ -58,10 +58,12 @@ trait DynamicPipelines extends Pipelines {
 trait DynamicCommandPipeline { this: Pipelines ⇒
   def initialCommandPipeline: Pipeline[Command]
   private[this] var _cpl: SwitchableCommandPipeline = _
+
   def commandPipeline: SwitchableCommandPipeline = {
     if (_cpl eq null) _cpl = new SwitchableCommandPipeline(initialCommandPipeline)
     _cpl
   }
+
   class SwitchableCommandPipeline(private[this] var proxy: Pipeline[Command]) extends Pipeline[Command] {
     def apply(cmd: Command): Unit = proxy(cmd)
     def become(cpl: Pipeline[Command]): Unit = proxy = cpl
@@ -71,10 +73,12 @@ trait DynamicCommandPipeline { this: Pipelines ⇒
 trait DynamicEventPipeline { this: Pipelines ⇒
   def initialEventPipeline: Pipeline[Event]
   private[this] var _epl: SwitchableEventPipeline = _
+
   def eventPipeline: SwitchableEventPipeline = {
     if (_epl eq null) _epl = new SwitchableEventPipeline(initialEventPipeline)
     _epl
   }
+
   class SwitchableEventPipeline(private[this] var proxy: Pipeline[Event]) extends Pipeline[Event] {
     def apply(ev: Event): Unit = proxy(ev)
     def become(epl: Pipeline[Event]): Unit = proxy = epl
@@ -89,7 +93,9 @@ trait PipelineContext {
 }
 
 object PipelineContext {
-  def apply(_actorContext: ActorContext, _remoteAddress: InetSocketAddress, _localAddress: InetSocketAddress,
+  def apply(_actorContext: ActorContext,
+            _remoteAddress: InetSocketAddress,
+            _localAddress: InetSocketAddress,
             _log: LoggingAdapter): PipelineContext = new PipelineContext {
     def actorContext: ActorContext = _actorContext
     def remoteAddress: InetSocketAddress = _remoteAddress
