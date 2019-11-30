@@ -26,6 +26,11 @@ object ServerBenchmark extends App {
    *    Ctrl + Shift + P shows type, structure, and location of implicit arguments.
    *
    *    Scalafmt as an alternative to the built-in formatter, see Settings | Editor | Code Style | Scala
+   *
+   * Note that the following sender is Actor.noSender(null), which will be pointed to the deadLetters of actor system
+   *
+   * IO(Http) will return a ActorRef of HttpManager
+   *   see [[spray.can.HttpExt]] and [[spray.can.HttpManager]]
    */
   IO(Http) ! Http.Bind(handler, interface, port)
 }
