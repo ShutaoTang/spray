@@ -29,7 +29,7 @@ import CharUtils._
 
 /**
  * Provides for time- and space-efficient parsing of an HTTP header line in an HTTP message.
- * It keeps a cache of all headers encountered in a previous request, so as to avoid reparsing and recreation of header
+ * It keeps a cache of all headers encountered in a previous request, so as to avoid re-parsing and recreation of header
  * model instances.
  * For the life-time of one HTTP connection an instance of this class is owned by the connection, i.e. not shared
  * with other connections. After the connection is closed it may be used by subsequent connections.
@@ -108,7 +108,8 @@ private[parsing] final class HttpHeaderParser private (val settings: ParserSetti
    * line ending from a line fold.
    * If the header is invalid a respective `ParsingException` is thrown.
    */
-  @tailrec def parseHeaderLine(input: ByteString, lineStart: Int = 0)(cursor: Int = lineStart, nodeIx: Int = 0): Int = {
+  @tailrec
+  def parseHeaderLine(input: ByteString, lineStart: Int = 0)(cursor: Int = lineStart, nodeIx: Int = 0): Int = {
     def startValueBranch(rootValueIx: Int, valueParser: HeaderValueParser) = {
       val (header, endIx) = valueParser(input, cursor, warnOnIllegalHeader)
       if (valueParser.maxValueCount > 0)
@@ -164,7 +165,8 @@ private[parsing] final class HttpHeaderParser private (val settings: ParserSetti
     }
   }
 
-  @tailrec private def parseHeaderValue(input: ByteString, valueStart: Int, branch: ValueBranch)(cursor: Int = valueStart, nodeIx: Int = branch.branchRootNodeIx): Int = {
+  @tailrec
+  private def parseHeaderValue(input: ByteString, valueStart: Int, branch: ValueBranch)(cursor: Int = valueStart, nodeIx: Int = branch.branchRootNodeIx): Int = {
     def parseAndInsertHeader() = {
       val (header, endIx) = branch.parser(input, valueStart, warnOnIllegalHeader)
       if (branch.spaceLeft)
@@ -203,13 +205,14 @@ private[parsing] final class HttpHeaderParser private (val settings: ParserSetti
    * - the input does not contain illegal characters
    * - the input is not a prefix of an already stored value, i.e. the input must be properly terminated (CRLF or colon)
    */
-  @tailrec def insert(input: ByteString, value: AnyRef)(cursor: Int = 0, endIx: Int = input.length, nodeIx: Int = 0, colonIx: Int = 0): Unit = {
+  @tailrec
+  def insert(input: ByteString, value: AnyRef)(cursor: Int = 0, endIx: Int = input.length, nodeIx: Int = 0, colonIx: Int = 0): Unit = {
     val char =
       if (cursor < colonIx) toLowerCase(input(cursor).toChar)
       else if (cursor < endIx) input(cursor).toChar
       else '\u0000'
     val node = nodes(nodeIx)
-    if (char == node) insert(input, value)(cursor + 1, endIx, nodeIx + 1, colonIx) // fast match, descend into only subnode
+    if (char == node) insert(input, value)(cursor + 1, endIx, nodeIx + 1, colonIx) // fast match, descend into only sub-node
     else {
       val nodeChar = node & 0xFF
       val signum = math.signum(char - nodeChar)
@@ -246,7 +249,8 @@ private[parsing] final class HttpHeaderParser private (val settings: ParserSetti
    * Inserts a value into the cache trie as new nodes.
    * CAUTION: this method must only be called if the trie data have already been "unshared"!
    */
-  @tailrec def insertRemainingCharsAsNewNodes(input: ByteString, value: AnyRef)(cursor: Int = 0, endIx: Int = input.length, valueIx: Int = newValueIndex, colonIx: Int = 0): Unit = {
+  @tailrec
+  def insertRemainingCharsAsNewNodes(input: ByteString, value: AnyRef)(cursor: Int = 0, endIx: Int = input.length, valueIx: Int = newValueIndex, colonIx: Int = 0): Unit = {
     val newNodeIx = newNodeIndex
     if (cursor < endIx) {
       val c = input(cursor).toChar
@@ -403,8 +407,7 @@ private object HttpHeaderParser {
 
   private val defaultIllegalHeaderWarning: ErrorInfo ⇒ Unit = info ⇒ sys.error(info.formatPretty)
 
-  def apply(settings: ParserSettings, warnOnIllegalHeader: ErrorInfo ⇒ Unit = defaultIllegalHeaderWarning,
-            unprimed: Boolean = false): HttpHeaderParser = {
+  def apply(settings: ParserSettings, warnOnIllegalHeader: ErrorInfo ⇒ Unit = defaultIllegalHeaderWarning, unprimed: Boolean = false): HttpHeaderParser = {
     val parser = new HttpHeaderParser(settings, warnOnIllegalHeader)
     if (!unprimed) {
       val valueParsers: Seq[HeaderValueParser] =
@@ -439,8 +442,7 @@ private object HttpHeaderParser {
     override def toString: String = s"HeaderValueParser[$headerName]"
   }
 
-  def modelledHeaderValueParser(headerName: String, parserRule: Rule1[HttpHeader], maxHeaderValueLength: Int,
-                                maxValueCount: Int) =
+  def modelledHeaderValueParser(headerName: String, parserRule: Rule1[HttpHeader], maxHeaderValueLength: Int, maxValueCount: Int) =
     new HeaderValueParser(headerName, maxValueCount) {
       def apply(input: ByteString, valueStart: Int, warnOnIllegalHeader: ErrorInfo ⇒ Unit): (HttpHeader, Int) = {
         val (headerValue, endIx) = scanHeaderValue(input, valueStart, valueStart + maxHeaderValueLength)()
@@ -463,8 +465,7 @@ private object HttpHeaderParser {
       }
     }
 
-  @tailrec private def scanHeaderNameAndReturnIndexOfColon(input: ByteString, start: Int,
-                                                           maxHeaderNameEndIx: Int)(ix: Int = start): Int =
+  @tailrec private def scanHeaderNameAndReturnIndexOfColon(input: ByteString, start: Int, maxHeaderNameEndIx: Int)(ix: Int = start): Int =
     if (ix < maxHeaderNameEndIx)
       byteChar(input, ix) match {
         case ':'                 ⇒ ix
@@ -473,7 +474,8 @@ private object HttpHeaderParser {
       }
     else fail(s"HTTP header name exceeds the configured limit of ${maxHeaderNameEndIx - start} characters")
 
-  @tailrec private def scanHeaderValue(input: ByteString, start: Int, maxHeaderValueEndIx: Int)(sb: JStringBuilder = null, ix: Int = start): (String, Int) = {
+  @tailrec
+  private def scanHeaderValue(input: ByteString, start: Int, maxHeaderValueEndIx: Int)(sb: JStringBuilder = null, ix: Int = start): (String, Int) = {
     def spaceAppended = (if (sb != null) sb else new JStringBuilder(asciiString(input, start, ix))).append(' ')
     if (ix < maxHeaderValueEndIx)
       byteChar(input, ix) match {

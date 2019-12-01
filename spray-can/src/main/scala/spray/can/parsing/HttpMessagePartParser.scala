@@ -25,8 +25,7 @@ import HttpHeaders._
 import HttpProtocols._
 import CharUtils._
 
-private[parsing] abstract class HttpMessagePartParser(val settings: ParserSettings,
-                                                      val headerParser: HttpHeaderParser) extends Parser {
+private[parsing] abstract class HttpMessagePartParser(val settings: ParserSettings, val headerParser: HttpHeaderParser) extends Parser {
   protected var protocol: HttpProtocol = `HTTP/1.1`
 
   def apply(input: ByteString): Result = parseMessageSafe(input)
@@ -135,8 +134,8 @@ private[parsing] abstract class HttpMessagePartParser(val settings: ParserSettin
     } else needMoreData(input, bodyStart)(parseFixedLengthBody(headers, _, _, length, cth, closeAfterResponseCompletion))
 
   def parseChunk(input: ByteString, offset: Int, closeAfterResponseCompletion: Boolean): Result = {
-    @tailrec def parseTrailer(extension: String, lineStart: Int, headers: List[HttpHeader] = Nil,
-                              headerCount: Int = 0): Result = {
+    @tailrec
+    def parseTrailer(extension: String, lineStart: Int, headers: List[HttpHeader] = Nil, headerCount: Int = 0): Result = {
       val lineEnd = headerParser.parseHeaderLine(input, lineStart)()
       headerParser.resultHeader match {
         case HttpHeaderParser.EmptyHeader ⇒
@@ -163,7 +162,8 @@ private[parsing] abstract class HttpMessagePartParser(val settings: ParserSettin
         }
       } else parseTrailer(extension, cursor)
 
-    @tailrec def parseChunkExtensions(chunkSize: Int, cursor: Int)(startIx: Int = cursor): Result =
+    @tailrec
+    def parseChunkExtensions(chunkSize: Int, cursor: Int)(startIx: Int = cursor): Result =
       if (cursor - startIx <= settings.maxChunkExtLength) {
         def extension = asciiString(input, startIx, cursor)
         byteChar(input, cursor) match {
@@ -173,7 +173,8 @@ private[parsing] abstract class HttpMessagePartParser(val settings: ParserSettin
         }
       } else fail(s"HTTP chunk extension length exceeds configured limit of ${settings.maxChunkExtLength} characters")
 
-    @tailrec def parseSize(cursor: Int = offset, size: Long = 0): Result =
+    @tailrec
+    def parseSize(cursor: Int = offset, size: Long = 0): Result =
       if (size <= settings.maxChunkSize) {
         byteChar(input, cursor) match {
           case c if isHexDigit(c) ⇒ parseSize(cursor + 1, size * 16 + hexValue(c))
@@ -190,8 +191,7 @@ private[parsing] abstract class HttpMessagePartParser(val settings: ParserSettin
     }
   }
 
-  def parseBodyWithAutoChunking(input: ByteString, offset: Int, remainingBytes: Long,
-                                closeAfterResponseCompletion: Boolean): Result = {
+  def parseBodyWithAutoChunking(input: ByteString, offset: Int, remainingBytes: Long, closeAfterResponseCompletion: Boolean): Result = {
     require(remainingBytes > 0)
     val chunkSize = math.min(remainingBytes, input.size - offset).toInt // safe conversion because input.size returns an Int
     if (chunkSize > 0) {

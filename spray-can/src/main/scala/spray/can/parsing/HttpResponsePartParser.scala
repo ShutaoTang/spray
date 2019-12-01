@@ -65,7 +65,8 @@ private[can] class HttpResponsePartParser(_settings: ParserSettings)(_headerPars
     } else badStatusCode
   }
 
-  @tailrec private def parseReason(input: ByteString, startIx: Int)(cursor: Int = startIx): Int =
+  @tailrec
+  private def parseReason(input: ByteString, startIx: Int)(cursor: Int = startIx): Int =
     if (cursor - startIx <= settings.maxResponseReasonLength)
       if (byteChar(input, cursor) == '\r' && byteChar(input, cursor + 1) == '\n') cursor + 2
       else parseReason(input, startIx)(cursor + 1)

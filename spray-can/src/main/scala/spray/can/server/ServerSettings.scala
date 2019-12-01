@@ -107,15 +107,13 @@ object ServerSettings extends SettingsCompanion[ServerSettings]("spray.can.serve
     c getIntBytes "max-encryption-chunk-size",
     defaultHostHeader =
       HttpParser.parseHeader(RawHeader("Host", c getString "default-host-header")) match {
-        case Right(x: Host) ⇒ x
+        case Right(h: Host) ⇒ h
         case Left(error)    ⇒ sys.error(error.withSummary("Configured `default-host-header` is illegal").formatPretty)
         case Right(_)       ⇒ throw new IllegalStateException
       },
     backpressureSettings =
       if (c.getBoolean("automatic-back-pressure-handling"))
-        Some(BackpressureSettings(
-        c getInt "back-pressure.noack-rate",
-        c getPossiblyInfiniteInt "back-pressure.reading-low-watermark"))
+        Some(BackpressureSettings(c getInt "back-pressure.noack-rate", c getPossiblyInfiniteInt "back-pressure.reading-low-watermark"))
       else None,
     c getBoolean "ssl-tracing",
     ParserSettings fromSubConfig c.getConfig("parsing"))

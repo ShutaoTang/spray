@@ -48,11 +48,11 @@ private class ResponseReceiverRef(openRequest: OpenRequest)
     message match {
       case part: HttpMessagePartWrapper if part.messagePart.isInstanceOf[HttpResponsePart] ⇒
         part.messagePart.asInstanceOf[HttpResponsePart] match {
-          case x: HttpResponse ⇒
-            require(x.protocol == HttpProtocols.`HTTP/1.1`, "Response must have protocol HTTP/1.1")
+          case response: HttpResponse ⇒
+            require(response.protocol == HttpProtocols.`HTTP/1.1`, "Response must have protocol HTTP/1.1")
             dispatch(part, Uncompleted, Completed)
-          case x: ChunkedResponseStart ⇒
-            require(x.response.protocol == HttpProtocols.`HTTP/1.1`, "Response must have protocol HTTP/1.1")
+          case start: ChunkedResponseStart ⇒
+            require(start.response.protocol == HttpProtocols.`HTTP/1.1`, "Response must have protocol HTTP/1.1")
             dispatch(part, Uncompleted, Chunking)
           case _: MessageChunk      ⇒ dispatch(part, Chunking, Chunking)
           case _: ChunkedMessageEnd ⇒ dispatch(part, Chunking, Completed)
@@ -61,7 +61,7 @@ private class ResponseReceiverRef(openRequest: OpenRequest)
       case RegisterChunkHandler(handler) ⇒ dispatch(ChunkHandlerRegistration(openRequest, handler), WaitingForChunkHandler, Uncompleted)
       case s: SetRequestTimeout          ⇒ dispatch(CommandWrapper(s))
       case s: SetTimeoutTimeout          ⇒ dispatch(CommandWrapper(s))
-      case x: Command                    ⇒ dispatch(x)
+      case cmd: Command                  ⇒ dispatch(cmd)
       case x ⇒
         openRequest.context.log.warning("Illegal response {} to {}", x, requestInfo)
         unhandledMessage(x)
@@ -82,13 +82,13 @@ private class ResponseReceiverRef(openRequest: OpenRequest)
   }
 
   private def dispatch(cmd: Command)(implicit sender: ActorRef) {
-    val ac = openRequest.context.actorContext
-    if (ac != null) ac.self ! cmd
+    val actorContext = openRequest.context.actorContext
+    if (actorContext != null) actorContext.self ! cmd
   }
 
   private def unhandledMessage(message: Any)(implicit sender: ActorRef): Unit = {
-    val ac = openRequest.context.actorContext
-    if (ac != null) ac.system.eventStream.publish(UnhandledMessage(message, sender, this))
+    val actorContext = openRequest.context.actorContext
+    if (actorContext != null) actorContext.system.eventStream.publish(UnhandledMessage(message, sender, this))
   }
 
   private def requestInfo = openRequest.request.method.toString + " request to '" + openRequest.request.uri + '\''

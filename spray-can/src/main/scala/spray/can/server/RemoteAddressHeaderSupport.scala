@@ -21,6 +21,7 @@ import spray.http._
 import HttpHeaders._
 
 private object RemoteAddressHeaderSupport extends PipelineStage {
+  // Note that EPL is an alias of function Event => Unit
   def apply(context: PipelineContext, commandPL: CPL, eventPL: EPL): Pipelines =
     new Pipelines {
       val raHeader = `Remote-Address`(RemoteAddress.IP(context.remoteAddress.getAddress))
@@ -29,16 +30,16 @@ private object RemoteAddressHeaderSupport extends PipelineStage {
       val commandPipeline = commandPL
 
       val eventPipeline: EPL = {
-        case x: RequestParsing.HttpMessageStartEvent ⇒ eventPL {
-          x.copy(
-            messagePart = x.messagePart match {
-              case request: HttpRequest         ⇒ appendHeader(request)
-              case ChunkedRequestStart(request) ⇒ ChunkedRequestStart(appendHeader(request))
-              case _                            ⇒ throw new IllegalStateException
-            })
+        case evt: RequestParsing.HttpMessageStartEvent ⇒ eventPL {
+          val messagePart = evt.messagePart match {
+            case request: HttpRequest         ⇒ appendHeader(request)
+            case ChunkedRequestStart(request) ⇒ ChunkedRequestStart(appendHeader(request))
+            case _                            ⇒ throw new IllegalStateException
+          }
+          evt.copy(messagePart = messagePart)
         }
 
-        case ev ⇒ eventPL(ev)
+        case evt ⇒ eventPL(evt)
       }
     }
 }

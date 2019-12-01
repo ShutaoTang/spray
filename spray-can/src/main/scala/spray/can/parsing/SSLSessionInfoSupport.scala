@@ -30,7 +30,7 @@ private[can] object SSLSessionInfoSupport extends PipelineStage {
       var sslSessionInfo: Option[`SSL-Session-Info`] = None
 
       def addSessionInfoHeader(message: HttpMessageStart): HttpMessageStart =
-        sslSessionInfo.fold(message) { info ⇒ message.mapHeaders { hdrs ⇒ info :: hdrs } }
+        sslSessionInfo.fold(message) { info ⇒ message.mapHeaders { headers ⇒ info :: headers } }
 
       val commandPipeline: CPL = commandPL
 
@@ -44,7 +44,7 @@ private[can] object SSLSessionInfoSupport extends PipelineStage {
         case RequestParsing.HttpMessageStartEvent(part, closeAfterResponseCompletion) if sslSessionInfo.isDefined ⇒
           eventPL(RequestParsing.HttpMessageStartEvent(addSessionInfoHeader(part), closeAfterResponseCompletion))
 
-        case ev ⇒ eventPL(ev)
+        case evt ⇒ eventPL(evt)
       }
     }
 }

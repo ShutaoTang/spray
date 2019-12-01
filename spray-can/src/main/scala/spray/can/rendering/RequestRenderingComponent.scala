@@ -28,17 +28,21 @@ private[can] trait RequestRenderingComponent {
   def userAgent: Option[`User-Agent`]
   def chunklessStreaming: Boolean
 
-  def renderRequestPartRenderingContext(r: Rendering, ctx: RequestPartRenderingContext, serverAddress: InetSocketAddress,
+  def renderRequestPartRenderingContext(r: Rendering,
+                                        ctx: RequestPartRenderingContext,
+                                        serverAddress: InetSocketAddress,
                                         log: LoggingAdapter): Unit = {
-    def renderRequestStart(request: HttpRequest, allowUserContentType: Boolean,
-                           userSpecifiedContentLength: Boolean): Unit = {
-      def render(h: HttpHeader) = r ~~ h ~~ CrLf
+    def renderRequestStart(request: HttpRequest, allowUserContentType: Boolean, userSpecifiedContentLength: Boolean): Unit = {
+      def render(httpHeader: HttpHeader) = r ~~ httpHeader ~~ CrLf
       def suppressionWarning(h: HttpHeader, msg: String = "the spray-can HTTP layer sets this header automatically!"): Unit =
         log.warning("Explicitly set request header '{}' is ignored, {}", h, msg)
 
-      @tailrec def renderHeaders(remaining: List[HttpHeader], hostHeaderSeen: Boolean = false,
-                                 userAgentSeen: Boolean = false, contentTypeSeen: Boolean = false,
-                                 contentLengthSeen: Boolean = false): Unit =
+      @tailrec
+      def renderHeaders(remaining: List[HttpHeader],
+                        hostHeaderSeen: Boolean = false,
+                        userAgentSeen: Boolean = false,
+                        contentTypeSeen: Boolean = false,
+                        contentLengthSeen: Boolean = false): Unit =
         remaining match {
           case head :: tail ⇒ head match {
             case x: `Content-Type` ⇒
@@ -96,14 +100,13 @@ private[can] trait RequestRenderingComponent {
         }
 
       def renderRequestLine(): Unit = {
-        @tailrec def renderUri(headers: List[HttpHeader]): Unit = {
-          headers match {
-            case head :: tail ⇒ head match {
-              case x: `Raw-Request-URI` ⇒ x.renderValue(r)
-              case _                    ⇒ renderUri(tail)
-            }
-            case Nil ⇒ request.uri.renderWithoutFragment(r, UTF8)
+        @tailrec
+        def renderUri(headers: List[HttpHeader]): Unit = headers match {
+          case head :: tail ⇒ head match {
+            case h: `Raw-Request-URI` ⇒ h.renderValue(r)
+            case _                    ⇒ renderUri(tail)
           }
+          case Nil ⇒ request.uri.renderWithoutFragment(r, UTF8)
         }
 
         r ~~ request.method ~~ ' '

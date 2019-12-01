@@ -31,10 +31,10 @@ private object RequestChunkAggregation {
           val commandPipeline = commandPL
 
           val initialEventPipeline: EPL = {
-            case ev @ HttpMessageStartEvent(ChunkedRequestStart(request), _) ⇒
-              eventPipeline.become(aggregating(ev, request, HttpData.newBuilder += request.entity.data))
+            case evt @ HttpMessageStartEvent(ChunkedRequestStart(request), _) ⇒
+              eventPipeline.become(aggregating(evt, request, HttpData.newBuilder += request.entity.data))
 
-            case ev ⇒ eventPL(ev)
+            case evt ⇒ eventPL(evt)
           }
 
           def aggregating(mse: HttpMessageStartEvent, request: HttpRequest, builder: HttpData.Builder): EPL = {
@@ -45,14 +45,14 @@ private object RequestChunkAggregation {
 
             case Http.MessageEvent(_: ChunkedMessageEnd) ⇒
               val contentType = request.header[HttpHeaders.`Content-Type`] match {
-                case Some(x) ⇒ x.contentType
-                case None    ⇒ ContentTypes.`application/octet-stream`
+                case Some(header) ⇒ header.contentType
+                case None         ⇒ ContentTypes.`application/octet-stream`
               }
               val aggregatedRequest = request.copy(entity = HttpEntity(contentType, builder.result()))
               eventPL(mse.copy(messagePart = aggregatedRequest))
               eventPipeline.become(initialEventPipeline)
 
-            case ev ⇒ eventPL(ev)
+            case evt ⇒ eventPL(evt)
           }
 
           def closeWithError(): Unit = {

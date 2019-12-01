@@ -41,7 +41,7 @@ private[can] trait ResponseRenderingComponent {
                                          log: LoggingAdapter): CloseMode = {
     def renderResponseStart(response: HttpResponse, allowUserContentType: Boolean,
                             contentLengthDefined: Boolean): Boolean = {
-      def render(h: HttpHeader) = r ~~ h ~~ CrLf
+      def render(httpHeader: HttpHeader) = r ~~ httpHeader ~~ CrLf
       def suppressionWarning(h: HttpHeader, msg: String = "the spray-can HTTP layer sets this header automatically!"): Unit =
         log.warning("Explicitly set response header '{}' is ignored, {}", h, msg)
 

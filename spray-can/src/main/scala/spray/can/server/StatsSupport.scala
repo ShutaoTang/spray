@@ -77,40 +77,39 @@ private object StatsSupport {
     }
   }
 
-  def apply(holder: StatsHolder): PipelineStage =
-    new PipelineStage {
-      def apply(context: PipelineContext, commandPL: CPL, eventPL: EPL): Pipelines =
-        new Pipelines {
-          import holder._
-          connectionsOpened.incrementAndGet()
-          adjustMaxOpenConnections()
+  def apply(holder: StatsHolder): PipelineStage = new PipelineStage {
 
-          val commandPipeline: CPL = {
-            case x: ResponsePartRenderingContext if x.responsePart.isInstanceOf[HttpMessageStart] ⇒
-              responseStarts.incrementAndGet()
-              commandPL(x)
+    def apply(context: PipelineContext, commandPL: CPL, eventPL: EPL): Pipelines = new Pipelines {
+      import holder._
+      connectionsOpened.incrementAndGet()
+      adjustMaxOpenConnections()
 
-            case x @ Pipeline.Tell(_, _: Timedout, _) ⇒
-              requestTimeouts.incrementAndGet()
-              commandPL(x)
+      val commandPipeline: CPL = {
+        case cmd: ResponsePartRenderingContext if cmd.responsePart.isInstanceOf[HttpMessageStart] ⇒
+          responseStarts.incrementAndGet()
+          commandPL(cmd)
 
-            case cmd ⇒ commandPL(cmd)
-          }
+        case cmd @ Pipeline.Tell(_, _: Timedout, _) ⇒
+          requestTimeouts.incrementAndGet()
+          commandPL(cmd)
 
-          val eventPipeline: EPL = {
-            case ev: HttpMessageStartEvent ⇒
-              requestStarts.incrementAndGet()
-              adjustMaxOpenRequests()
-              eventPL(ev)
+        case cmd ⇒ commandPL(cmd)
+      }
 
-            case x: Http.ConnectionClosed ⇒
-              connectionsClosed.incrementAndGet()
-              eventPL(x)
+      val eventPipeline: EPL = {
+        case evt: HttpMessageStartEvent ⇒
+          requestStarts.incrementAndGet()
+          adjustMaxOpenRequests()
+          eventPL(evt)
 
-            case ev ⇒ eventPL(ev)
-          }
-        }
+        case evt: Http.ConnectionClosed ⇒
+          connectionsClosed.incrementAndGet()
+          eventPL(evt)
+
+        case evt ⇒ eventPL(evt)
+      }
     }
+  }
 }
 
 //# Stats

@@ -87,12 +87,12 @@ private[can] class HttpRequestPartParser(_settings: ParserSettings, rawRequestUr
     val uriStart = cursor
     val uriEndLimit = cursor + settings.maxUriLength
 
-    @tailrec def findUriEnd(ix: Int = cursor): Int =
-      if (ix == input.length) throw NotEnoughDataException
-      else if (CharUtils.isWhitespaceOrNewline(input(ix).toChar)) ix
-      else if (ix < uriEndLimit) findUriEnd(ix + 1)
-      else throw new ParsingException(RequestUriTooLong,
-        s"URI length exceeds the configured limit of ${settings.maxUriLength} characters")
+    @tailrec
+    def findUriEnd(idx: Int = cursor): Int =
+      if (idx == input.length) throw NotEnoughDataException
+      else if (CharUtils.isWhitespaceOrNewline(input(idx).toChar)) idx
+      else if (idx < uriEndLimit) findUriEnd(idx + 1)
+      else throw new ParsingException(RequestUriTooLong, s"URI length exceeds the configured limit of ${settings.maxUriLength} characters")
 
     val uriEnd = findUriEnd()
     try {

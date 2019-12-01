@@ -23,33 +23,30 @@ import spray.io._
 
 private object ResponseRendering {
 
-  def apply(settings: ServerSettings): PipelineStage =
-    new PipelineStage with ResponseRenderingComponent {
-      def serverHeaderValue: String = settings.serverHeader
-      def chunklessStreaming: Boolean = settings.chunklessStreaming
-      def transparentHeadRequests: Boolean = settings.transparentHeadRequests
+  def apply(settings: ServerSettings): PipelineStage = new PipelineStage with ResponseRenderingComponent {
+    def serverHeaderValue: String = settings.serverHeader
+    def chunklessStreaming: Boolean = settings.chunklessStreaming
+    def transparentHeadRequests: Boolean = settings.transparentHeadRequests
 
-      def apply(context: PipelineContext, commandPL: CPL, eventPL: EPL): Pipelines =
-        new Pipelines {
-          var closeAfterEnd = false
+    def apply(context: PipelineContext, commandPL: CPL, eventPL: EPL): Pipelines = new Pipelines {
+      var closeAfterEnd = false
 
-          val commandPipeline: CPL = {
-            case ctx: ResponsePartRenderingContext ⇒
-              val rendering = new HttpDataRendering(settings.responseHeaderSizeHint)
-              val closeMode = renderResponsePartRenderingContext(rendering, ctx, context.log)
-              commandPL(toTcpWriteCommand(rendering.get, ctx.ack))
+      val commandPipeline: CPL = {
+        case ctx: ResponsePartRenderingContext ⇒
+          val rendering = new HttpDataRendering(settings.responseHeaderSizeHint)
+          val closeMode = renderResponsePartRenderingContext(rendering, ctx, context.log)
+          commandPL(toTcpWriteCommand(rendering.get, ctx.ack))
 
-              val closeNow = closeMode.shouldCloseNow(ctx.responsePart, closeAfterEnd)
-              if (closeMode == CloseMode.CloseAfterEnd) closeAfterEnd = true
-              if (closeNow) {
-                closeAfterEnd = false
-                commandPL(Http.ConfirmedClose)
-              }
-
-            case cmd ⇒ commandPL(cmd)
+          val closeNow = closeMode.shouldCloseNow(ctx.responsePart, closeAfterEnd)
+          if (closeMode == CloseMode.CloseAfterEnd) closeAfterEnd = true
+          if (closeNow) {
+            closeAfterEnd = false
+            commandPL(Http.ConfirmedClose)
           }
-
-          val eventPipeline = eventPL
-        }
+        case cmd ⇒ commandPL(cmd)
+      }
+      val eventPipeline = eventPL
     }
+  }
+
 }
