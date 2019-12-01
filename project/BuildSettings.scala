@@ -12,7 +12,7 @@ import SbtOsgi._
 object BuildSettings {
   val VERSION = "1.2.3"
 
-  lazy val basicSettings = seq(
+  lazy val basicSettings = Seq(
     version               := NightlyBuildSupport.buildVersion(VERSION),
     homepage              := Some(new URL("http://spray.io")),
     organization          := "io.spray",
@@ -39,7 +39,7 @@ object BuildSettings {
     NightlyBuildSupport.settings ++
     net.virtualvoid.sbt.graph.Plugin.graphSettings ++
     SbtPgp.settings ++
-    seq(
+    Seq(
       // scaladoc settings
       (scalacOptions in doc) <++= (name, version).map { (n, v) => Seq("-doc-title", n, "-doc-version", v) },
 
@@ -72,7 +72,7 @@ object BuildSettings {
         </developers>
     )
 
-  lazy val noPublishing = seq(
+  lazy val noPublishing = Seq(
     publish := (),
     publishLocal := (),
     // required until these tickets are closed https://github.com/sbt/sbt-pgp/issues/42,
@@ -83,7 +83,7 @@ object BuildSettings {
   lazy val generateSprayVersionConf = TaskKey[Seq[File]]("generate-spray-version-conf",
     "Create a reference.conf file in the managed resources folder that contains a spray.version = ... setting")
 
-  lazy val sprayVersionConfGeneration = seq(
+  lazy val sprayVersionConfGeneration = Seq(
     (unmanagedResources in Compile) <<= (unmanagedResources in Compile).map(_.filter(_.getName != "reference.conf")),
     resourceGenerators in Compile <+= generateSprayVersionConf,
     generateSprayVersionConf <<= (unmanagedResourceDirectories in Compile, resourceManaged in Compile, version) map {
@@ -97,7 +97,7 @@ object BuildSettings {
     }
   )
 
-  lazy val docsSettings = basicSettings ++ noPublishing ++ seq(
+  lazy val docsSettings = basicSettings ++ noPublishing ++ Seq(
     unmanagedSourceDirectories in Test <<= baseDirectory { _ ** "code" get }
   )
 

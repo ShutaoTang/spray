@@ -167,8 +167,7 @@ object Build extends Build {
   // -------------------------------------------------------------------------------------------------------------------
 
   lazy val docs = Project("docs", file("docs"))
-    .dependsOn(sprayCaching, sprayCan, sprayClient, sprayHttp, sprayHttpx, sprayIO, sprayRouting,
-               sprayServlet, sprayTestKit, sprayUtil)
+    .dependsOn(sprayCaching, sprayCan, sprayClient, sprayHttp, sprayHttpx, sprayIO, sprayRouting, sprayServlet, sprayTestKit, sprayUtil)
     .settings(SphinxSupport.settings: _*)
     .settings(docsSettings: _*)
     .settings(libraryDependencies ++= test(akkaActor, sprayJson, specs2, json4sNative))

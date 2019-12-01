@@ -1,8 +1,6 @@
 import sbt._
 import com.decodified.scalassh.{Command => SshCommand, _}
-import sbt.Load.BuildStructure
 import scala.Console.{RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE}
-
 
 object Utils {
   type Log = String => Unit

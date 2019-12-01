@@ -12,7 +12,7 @@ object NightlyBuildSupport {
       if (isNightly) version.takeWhile(_ != '-') + new SimpleDateFormat("-yyyyMMdd").format(new Date)
       else version
 
-  lazy val settings = seq(
+  lazy val settings = Seq(
     packagedArtifacts <<= (packagedArtifacts, crossTarget) map { (artifacts, dir) =>
       if (isNightly) {
         val file = dir / "commit"
