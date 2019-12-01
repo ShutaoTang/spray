@@ -43,8 +43,10 @@ class IncludeCode(Directive):
         encoding = self.options.get('encoding', env.config.source_encoding)
         codec_info = codecs.lookup(encoding)
         try:
-            f = codecs.StreamReaderWriter(open(fn, 'U'),
-                    codec_info[2], codec_info[3], 'strict')
+            # File "d:\win10\python\python38\lib\codecs.py", line 500, in read
+            #      data = self.bytebuffer + newdata
+            # TypeError: can't concat str to bytes
+            f = open(fn, mode='r', encoding='utf-8')
             lines = f.readlines()
             f.close()
         except (IOError, OSError):

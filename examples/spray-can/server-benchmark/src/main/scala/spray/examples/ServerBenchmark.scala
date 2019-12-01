@@ -24,6 +24,9 @@ object ServerBenchmark extends App {
    *    Ctrl + Alt + Shift + "-"  will collapse all foldings or disable the above mode
    *
    *    Ctrl + Shift + P shows type, structure, and location of implicit arguments.
+   *    Ctrl + Shift + Q shows all the implicit conversions of scala expression.
+   *
+   *    Alt + "+" shows the type of variable
    *
    *    Scalafmt as an alternative to the built-in formatter, see Settings | Editor | Code Style | Scala
    *
