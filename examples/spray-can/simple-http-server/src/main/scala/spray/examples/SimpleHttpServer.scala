@@ -6,7 +6,7 @@ import spray.can.Http
 
 object SimpleHttpServer extends App with MySslConfiguration {
 
-  implicit val system = ActorSystem()
+  implicit val system = ActorSystem("simple-server")
 
   // the handler actor replies to incoming HttpRequests
   val handler = system.actorOf(Props[DemoService], name = "handler")
