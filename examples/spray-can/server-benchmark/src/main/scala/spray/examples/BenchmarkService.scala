@@ -1,7 +1,9 @@
 package spray.examples
 
+import java.lang.reflect.Method
+
 import scala.concurrent.duration._
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, ActorSystem}
 import spray.can.Http
 import spray.json._
 import spray.http._
@@ -12,6 +14,9 @@ class BenchmarkService extends Actor with ActorLogging {
   import context.dispatcher // ExecutionContext for scheduler
   import Uri._
   import Uri.Path._
+  implicit val system = context.system
+
+  val actorTree = new ActorTree
 
   def jsonResponseEntity = HttpEntity(
     contentType = ContentTypes.`application/json`,
@@ -37,10 +42,12 @@ class BenchmarkService extends Actor with ActorLogging {
     // when a new connection comes in we register ourselves as the connection handler
     case _: Http.Connected =>
       log.info("message Http.Connected from sender() >>> {}", sender)
+      log.info("actor tree: \n\n {} \n", fansi.Color.LightBlue(actorTree.show()))
       sender ! Http.Register(self, fastPath = fastPath)
 
     case HttpRequest(GET, Uri.Path("/"), _, _, _) =>
       log.info("message HttpRequest from sender >>> {}}", sender)
+      log.info("actor tree: \n\n {} \n", fansi.Color.Magenta(actorTree.show()))
       sender ! HttpResponse(
         entity = HttpEntity(MediaTypes.`text/html`,
           <html>
@@ -76,4 +83,28 @@ class BenchmarkService extends Actor with ActorLogging {
 
     case _: HttpRequest => sender ! HttpResponse(NotFound, entity = "Unknown resource!")
   }
+}
+
+class ActorTree(implicit system: ActorSystem) {
+
+  /**
+   * see [[akka.actor.ActorSystemImpl.printTree]]
+   */
+  private[this] val methodName = "printTree"
+
+  private[this] val printTreeMethodInActorSystem = makeMethodAccessible(system)
+
+  private def makeMethodAccessible(obj: AnyRef): Method = {
+
+    def _parents: Stream[Class[_]] = Stream(obj.getClass) #::: _parents.map(_.getSuperclass)
+
+    val parents = _parents.takeWhile(_ ne null).toList
+    val methods = parents.flatMap(_.getDeclaredMethods)
+    val method = methods.find(_.getName == methodName)
+      .getOrElse(throw new IllegalArgumentException("Method " + methodName + " not found"))
+    method.setAccessible(true)
+    method
+  }
+
+  def show() = printTreeMethodInActorSystem.invoke(system).asInstanceOf[String]
 }

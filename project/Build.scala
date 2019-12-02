@@ -189,7 +189,7 @@ object Build extends Build {
     .dependsOn(sprayCan, sprayHttp)
     .settings(benchmarkSettings: _*)
     .settings(libraryDependencies ++=
-      compile(akkaActor, sprayJson) ++
+      compile(akkaActor, sprayJson, fansi) ++
       runtime(akkaSlf4j, logback)
     )
 

@@ -33,5 +33,6 @@ object Dependencies {
   val json4sNative  = "org.json4s"                              %%  "json4s-native"               % "3.2.11"
   val json4sJackson = "org.json4s"                              %%  "json4s-jackson"              % "3.2.11"
   val playJson      = "com.typesafe.play"                       %%  "play-json"                   % "2.3.8"
+  val fansi         = "com.lihaoyi"                             %%  "fansi"                       % "0.2.0"
 }
 

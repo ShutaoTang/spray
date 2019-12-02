@@ -4,11 +4,11 @@
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.out</target>
         <encoder>
-            <pattern>%date{MM/dd HH:mm:ss.SSS} %-5level[%t] %logger{1} - %msg%n</pattern>
+            <pattern>%date{MM/dd HH:mm:ss.SSS} %highlight([%-5level]) %green([%thread]) %cyan(%logger{1}) - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
     </root>
 
