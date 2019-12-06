@@ -86,15 +86,15 @@ object BackPressureHandling {
 
                 commandPL(out.enqueue(w))
               case w @ Tcp.Write(data, ack) ⇒ commandPL(out.enqueue(w, forceAck = true))
-              case a @ Tcp.Abort            ⇒ commandPL(a) // always forward abort
-              case c: Tcp.CloseCommand if out.queueEmpty ⇒
-                commandPL(c)
+              case cmd @ Tcp.Abort          ⇒ commandPL(cmd) // always forward abort
+              case cmd: Tcp.CloseCommand if out.queueEmpty ⇒
+                commandPL(cmd)
                 become(closed())
-              case c: Tcp.CloseCommand ⇒
-                if (isClosing) log.warning(s"Ignored duplicate close request when closing. $c")
+              case cmd: Tcp.CloseCommand ⇒
+                if (isClosing) log.warning(s"Ignored duplicate close request when closing. $cmd")
                 else {
                   commandPL(ProbeForEndOfWriting)
-                  become(writeThrough(out, isReading, Some(c)))
+                  become(writeThrough(out, isReading, Some(cmd)))
                 }
 
               case c ⇒ commandPL(c)
@@ -119,7 +119,7 @@ object BackPressureHandling {
                 require(isClosing, "Received unexpected CanCloseNow when not closing")
                 commandPL(closeCommand.get)
                 become(closed())
-              case e ⇒ eventPL(e)
+              case evt ⇒ eventPL(evt)
             }
           }
 
@@ -138,17 +138,17 @@ object BackPressureHandling {
                 case w: Tcp.Write ⇒
                   if (isClosing) log.warning("Can't process more writes when closing. Dropping...")
                   else out.enqueue(w)
-                case a @ Tcp.Abort ⇒ commandPL(a)
-                case c: Tcp.CloseCommand ⇒
-                  if (isClosing) log.warning(s"Ignored duplicate close request ($c) when closing.")
+                case cmd @ Tcp.Abort ⇒ commandPL(cmd)
+                case cmd: Tcp.CloseCommand ⇒
+                  if (isClosing) log.warning(s"Ignored duplicate close request ($cmd) when closing.")
                   else {
                     // we can resume reading now (even if we don't expect any more to come in)
                     // because by definition more data read can't lead to more traffic on the
                     // writing side once the writing side was closed
                     if (!isReading) commandPL(Tcp.ResumeReading)
-                    become(buffering(out, failedSeq, isReading = true, Some(c)))
+                    become(buffering(out, failedSeq, isReading = true, Some(cmd)))
                   }
-                case c ⇒ commandPL(c)
+                case cmd ⇒ commandPL(cmd)
               }
               def eventPipeline = {
                 case Tcp.WritingResumed ⇒
@@ -171,19 +171,19 @@ object BackPressureHandling {
                 // ack'd one and the next one fails (because of the ack'd one still being in the queue)
                 // the CommandFailed will be received before the Ack
                 case Ack(seq)                         ⇒ log.warning(s"Unexpected Ack($seq) in buffering mode. length: ${out.queueLength} head: ${out.headSequenceNo}")
-                case e                                ⇒ eventPL(e)
+                case evt                              ⇒ eventPL(evt)
               }
             }
           }
 
           def closed(): State = new State {
             def commandPipeline = {
-              case c @ (_: Tcp.Write | _: Tcp.CloseCommand) ⇒ log.debug(s"Connection is already closed, dropping command $c")
-              case c                                        ⇒ commandPL(c)
+              case cmd @ (_: Tcp.Write | _: Tcp.CloseCommand) ⇒ log.debug(s"Connection is already closed, dropping command $cmd")
+              case cmd                                        ⇒ commandPL(cmd)
             }
             def eventPipeline = {
               case CanCloseNow ⇒ // ignore here
-              case e           ⇒ eventPL(e)
+              case evt         ⇒ eventPL(evt)
             }
           }
         }
@@ -214,7 +214,9 @@ object BackPressureHandling {
       val ack = if (shouldAck) Ack(seq) else NoAck(seq)
       Tcp.Write(w.data, ack)
     }
-    @tailrec final def dequeue(upToSeq: Int): Option[Event] =
+
+    @tailrec
+    final def dequeue(upToSeq: Int): Option[Event] =
       if (firstSequenceNo < upToSeq) {
         firstSequenceNo += 1
         assert(!buffer.front.wantsAck) // as we would lose it here

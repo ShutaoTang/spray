@@ -71,12 +71,12 @@ object SslTlsSupport {
                            closedEvent: Option[Tcp.ConnectionClosed] = None): State = new State {
             if (tracing) log.debug("Transitioning to defaultState")
             val commandPipeline: CPL = {
-              case x: Tcp.WriteCommand ⇒
-                if (tracing) log.debug("Received write {} in defaultState", x.getClass)
-                startSending(x, remainingOutgoingData, closedEvent, sendNow = true)
-              case x @ (Tcp.Close | Tcp.ConfirmedClose) ⇒
-                log.debug("Closing outbound SSL stream due to reception of {}", x)
-                startClosing(x.asInstanceOf[Tcp.CloseCommand].event)
+              case cmd: Tcp.WriteCommand ⇒
+                if (tracing) log.debug("Received write {} in defaultState", cmd.getClass)
+                startSending(cmd, remainingOutgoingData, closedEvent, sendNow = true)
+              case cmd @ (Tcp.Close | Tcp.ConfirmedClose) ⇒
+                log.debug("Closing outbound SSL stream due to reception of {}", cmd)
+                startClosing(cmd.asInstanceOf[Tcp.CloseCommand].event)
               case Tcp.Abort ⇒ abort() // do we need to close anything in this case?
               case cmd       ⇒ commandPL(cmd)
             }
@@ -92,11 +92,11 @@ object SslTlsSupport {
                     else waitingForAck(remainingOutgoingData, closedEvent)
                   }
                 }
-              case Tcp.PeerClosed     ⇒ receivedUnexpectedPeerClosed()
-              case x: Tcp.ErrorClosed ⇒ eventPL(x) // is there anything we need to close in this case?
-              case x @ (_: Tcp.ConnectionClosed | WriteChunkAck) ⇒
-                throw new IllegalStateException("Received " + x + " in defaultState")
-              case ev ⇒ eventPL(ev)
+              case Tcp.PeerClosed       ⇒ receivedUnexpectedPeerClosed()
+              case evt: Tcp.ErrorClosed ⇒ eventPL(evt) // is there anything we need to close in this case?
+              case evt @ (_: Tcp.ConnectionClosed | WriteChunkAck) ⇒
+                throw new IllegalStateException("Received " + evt + " in defaultState")
+              case evt ⇒ eventPL(evt)
             }
           }
 
@@ -107,14 +107,14 @@ object SslTlsSupport {
                             closedEvent: Option[Tcp.ConnectionClosed] = None): State = new State {
             if (tracing) log.debug("Transitioning to waitingForAck")
             val commandPipeline: CPL = {
-              case x: Tcp.WriteCommand ⇒
-                if (tracing) log.debug("Received write {} in waitingForAck", x.getClass)
-                startSending(x, remainingOutgoingData, closedEvent, sendNow = false)
-              case x @ (Tcp.Close | Tcp.ConfirmedClose) ⇒
+              case cmd: Tcp.WriteCommand ⇒
+                if (tracing) log.debug("Received write {} in waitingForAck", cmd.getClass)
+                startSending(cmd, remainingOutgoingData, closedEvent, sendNow = false)
+              case cmd @ (Tcp.Close | Tcp.ConfirmedClose) ⇒
                 if (closedEvent.isEmpty) {
-                  log.debug("Scheduling close of outbound SSL stream due to reception of {}", x)
-                  become(waitingForAck(remainingOutgoingData, Some(x.asInstanceOf[Tcp.CloseCommand].event)))
-                } else log.debug("Dropping {} since an SSL-level close is already scheduled", x)
+                  log.debug("Scheduling close of outbound SSL stream due to reception of {}", cmd)
+                  become(waitingForAck(remainingOutgoingData, Some(cmd.asInstanceOf[Tcp.CloseCommand].event)))
+                } else log.debug("Dropping {} since an SSL-level close is already scheduled", cmd)
               case Tcp.Abort ⇒ abort() // do we need to close anything in this case?
               case cmd       ⇒ commandPL(cmd)
             }
@@ -140,16 +140,16 @@ object SslTlsSupport {
                     else startEncrypting(tail, sendNow = true, closedEvent)
                   }
                 }
-              case Tcp.PeerClosed          ⇒ receivedUnexpectedPeerClosed()
-              case x: Tcp.ErrorClosed      ⇒ eventPL(x) // is there anything we need to close in this case?
-              case x: Tcp.ConnectionClosed ⇒ throw new IllegalStateException("Received " + x + " in waitingForAck")
-              case ev                      ⇒ eventPL(ev)
+              case Tcp.PeerClosed            ⇒ receivedUnexpectedPeerClosed()
+              case evt: Tcp.ErrorClosed      ⇒ eventPL(evt) // is there anything we need to close in this case?
+              case evt: Tcp.ConnectionClosed ⇒ throw new IllegalStateException("Received " + evt + " in waitingForAck")
+              case evt                       ⇒ eventPL(evt)
             }
-            def startClosingOrReturnToDefaultState(): Unit =
-              closedEvent match {
-                case Some(ev) ⇒ startClosing(ev)
-                case None     ⇒ become(defaultState())
-              }
+
+            def startClosingOrReturnToDefaultState(): Unit = closedEvent match {
+              case Some(evt) ⇒ startClosing(evt)
+              case None      ⇒ become(defaultState())
+            }
           }
 
           // SSLEngine is outbound done, ACK pending for SSL-level closing sequence bytes that were already sent
@@ -160,10 +160,10 @@ object SslTlsSupport {
             if (tracing) log.debug("Transitioning to finishClose({}, {})", closedEvent, closeCommand)
             commandPL(closeCommand)
             val commandPipeline: CPL = {
-              case x: Tcp.WriteCommand                  ⇒ failWrite(x, "the SSL connection is already closing")
-              case x @ (Tcp.Close | Tcp.ConfirmedClose) ⇒ log.debug("Dropping {} since the SSL connection is already closing", x)
-              case Tcp.Abort                            ⇒ abort() // do we need to close anything in this case?
-              case cmd                                  ⇒ commandPL(cmd)
+              case cmd: Tcp.WriteCommand                  ⇒ failWrite(cmd, "the SSL connection is already closing")
+              case cmd @ (Tcp.Close | Tcp.ConfirmedClose) ⇒ log.debug("Dropping {} since the SSL connection is already closing", cmd)
+              case Tcp.Abort                              ⇒ abort() // do we need to close anything in this case?
+              case cmd                                    ⇒ commandPL(cmd)
             }
             val eventPipeline: EPL = {
               case Tcp.Received(data) ⇒
@@ -182,11 +182,12 @@ object SslTlsSupport {
               case _: Tcp.ConnectionClosed ⇒ eventPL(closedEvent getOrElse Tcp.PeerClosed)
               // TODO: remove this work-around for https://github.com/akka/akka/pull/1800 (1801)
               case Pipeline.ActorDeath(_)  ⇒ eventPL(closedEvent getOrElse Tcp.PeerClosed)
-              case ev                      ⇒ eventPL(ev)
+              case evt                     ⇒ eventPL(evt)
             }
           }
 
-          def startSending(write: Tcp.WriteCommand, remainingOutgoingData: Stream[WriteChunk],
+          def startSending(write: Tcp.WriteCommand,
+                           remainingOutgoingData: Stream[WriteChunk],
                            closedEvent: Option[Tcp.ConnectionClosed], sendNow: Boolean): Unit =
             if (closedEvent.isEmpty) {
               if (remainingOutgoingData.isEmpty) {
@@ -196,9 +197,7 @@ object SslTlsSupport {
               } else failWrite(write, "there is already another write in progress")
             } else failWrite(write, "the SSL connection is already closing")
 
-          def startEncrypting(chunkStream: Stream[WriteChunk],
-                              sendNow: Boolean,
-                              closedEvent: Option[Tcp.ConnectionClosed] = None): Unit =
+          def startEncrypting(chunkStream: Stream[WriteChunk], sendNow: Boolean, closedEvent: Option[Tcp.ConnectionClosed] = None): Unit =
             if (chunkStream.head.buffer.hasRemaining) {
               setPendingOutboundBytes(chunkStream.head.buffer)
               encrypt()
@@ -235,7 +234,7 @@ object SslTlsSupport {
                 def commandPipeline = commandPL
                 val eventPipeline: EPL = {
                   case Tcp.Received(data) ⇒ log.debug("Dropping {} received bytes due to connection having been aborted", data.size)
-                  case ev                 ⇒ eventPL(ev)
+                  case evt                ⇒ eventPL(evt)
                 }
               }
             }
@@ -265,7 +264,8 @@ object SslTlsSupport {
           // potentially encrypted bytes are accumulated in the pendingEncryptedBytes builder
           // pumping is only stopped by a buffer underflow on the inbound side or when both sides are done
           val encrypt: PumpAction = new PumpAction {
-            @tailrec def apply(tempBuf: ByteBuffer): Unit = {
+            @tailrec
+            def apply(tempBuf: ByteBuffer): Unit = {
               tempBuf.clear()
               val result = engine.wrap(pendingOutboundBytes, tempBuf)
               tempBuf.flip()
@@ -289,7 +289,8 @@ object SslTlsSupport {
 
           // same as `encrypt` but starts with decrypting
           val decrypt: PumpAction = new PumpAction {
-            @tailrec def apply(tempBuf: ByteBuffer): Unit = {
+            @tailrec
+            def apply(tempBuf: ByteBuffer): Unit = {
               tempBuf.clear()
               val result = engine.unwrap(pendingInboundBytes, tempBuf)
               tempBuf.flip()
@@ -347,7 +348,8 @@ object SslTlsSupport {
                 buffer
               } else data.toByteBuffer
 
-          @tailrec def runDelegatedTasks(): Unit = {
+          @tailrec
+          def runDelegatedTasks(): Unit = {
             val task = engine.getDelegatedTask
             if (task != null) {
               task.run()
@@ -373,8 +375,7 @@ object SslTlsSupport {
             context.self ! cmd.failureMessage
           }
 
-          def verify(condition: Boolean): Unit =
-            if (!condition) throw new IllegalStateException
+          def verify(condition: Boolean): Unit = if (!condition) throw new IllegalStateException
         }
 
       def writeChunkStream(cmd: Tcp.WriteCommand): Stream[WriteChunk] = {
@@ -422,12 +423,12 @@ private[io] sealed abstract class SSLEngineProviderCompanion(protected val clien
 
   protected def fromFunc(f: PipelineContext ⇒ Option[SSLEngine]): Self
 
-  def apply(f: SSLEngine ⇒ SSLEngine)(implicit cp: SSLContextProvider): Self =
+  def apply(f: SSLEngine ⇒ SSLEngine)(implicit sslContextProvider: SSLContextProvider): Self =
     fromFunc(default.apply(_) map f)
 
-  implicit def default(implicit cp: SSLContextProvider): Self =
+  implicit def default(implicit sslContextProvider: SSLContextProvider): Self =
     fromFunc { plc ⇒
-      cp(plc) map { sslContext ⇒
+      sslContextProvider(plc) map { sslContext ⇒
         val address = plc.remoteAddress
         val engine = sslContext.createSSLEngine(SslTlsSupport.hostString(address), address.getPort)
         engine.setUseClientMode(clientMode)
