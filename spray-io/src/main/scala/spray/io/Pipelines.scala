@@ -80,7 +80,7 @@ trait DynamicEventPipeline { this: Pipelines ⇒
   }
 
   class SwitchableEventPipeline(private[this] var proxy: Pipeline[Event]) extends Pipeline[Event] {
-    def apply(ev: Event): Unit = proxy(ev)
+    def apply(evt: Event): Unit = proxy(evt)
     def become(epl: Pipeline[Event]): Unit = proxy = epl
   }
 }

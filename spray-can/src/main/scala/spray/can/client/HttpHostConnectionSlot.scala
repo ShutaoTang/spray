@@ -109,9 +109,9 @@ private class HttpHostConnectionSlot(host: String, port: Int,
       val ctx = openRequests.head
 
       part match {
-        case x: HttpResponse ⇒ handleResponseCompletion(x.connectionCloseExpected)
-        case ChunkedResponseStart(x: HttpResponse) ⇒
-          context.become(connected(httpConnection, openRequests, x.connectionCloseExpected))
+        case response: HttpResponse ⇒ handleResponseCompletion(response.connectionCloseExpected)
+        case ChunkedResponseStart(response: HttpResponse) ⇒
+          context.become(connected(httpConnection, openRequests, response.connectionCloseExpected))
         case _: MessageChunk      ⇒ // nothing to do
         case _: ChunkedMessageEnd ⇒ handleResponseCompletion(closeAfterResponseEnd)
       }
@@ -125,24 +125,24 @@ private class HttpHostConnectionSlot(host: String, port: Int,
 
       maybeRedirect.getOrElse(() ⇒ dispatchToCommander(ctx, part)).apply()
 
-    case x: HttpResponsePart ⇒
-      log.warning("Received unexpected response for non-existing request: {}, dropping", x)
+    case part: HttpResponsePart ⇒
+      log.warning("Received unexpected response for non-existing request: {}, dropping", part)
 
     case ctx: RequestContext ⇒
       dispatchToServer(httpConnection)(ctx)
       context.become(connected(httpConnection, openRequests.enqueue(ctx), closeAfterResponseEnd))
 
-    case ev @ Http.SendFailed(part) ⇒
+    case Http.SendFailed(part) ⇒
       log.debug("Sending {} failed, closing connection", format(part))
       httpConnection ! Http.Close
       context.become(closing(httpConnection, openRequests, "Error sending request (part)", retry = RetryIdempotent))
 
-    case ev: Http.CommandFailed ⇒
-      log.debug("Received {}, closing connection", ev)
+    case evt: Http.CommandFailed ⇒
+      log.debug("Received {}, closing connection", evt)
       httpConnection ! Http.Close
       context.become(closing(httpConnection, openRequests, "Command error", retry = RetryIdempotent))
 
-    case ev @ Timedout(part) ⇒
+    case Timedout(part) ⇒
       log.debug("{} timed out, closing connection", format(part))
       context.become(closing(httpConnection, openRequests, new Http.RequestTimeoutException(part, format(part) + " timed out"), retry = RetryIdempotent))
 
@@ -151,11 +151,10 @@ private class HttpHostConnectionSlot(host: String, port: Int,
       openRequests foreach clear(s"Connection actively closed ($cmd)", retry = RetryNever)
       context.become(terminating(httpConnection))
 
-    case ev: Http.ConnectionClosed ⇒
-
-      val errorMsgForOpenRequests = ev match {
+    case evt: Http.ConnectionClosed ⇒
+      val errorMsgForOpenRequests = evt match {
         case Http.PeerClosed ⇒ "Premature connection close (the server doesn't appear to support request pipelining)"
-        case x               ⇒ x.toString
+        case other           ⇒ other.toString
       }
       reportDisconnection(openRequests, errorMsgForOpenRequests, retry = RetryIdempotent)
       context.become(waitingForConnectionTermination(httpConnection))
@@ -240,12 +239,12 @@ private class HttpHostConnectionSlot(host: String, port: Int,
 
     case ctx: RequestContext ⇒
       log.warning("{} in response to {} with no retries left, dispatching error...", error.getMessage, format(ctx.request))
-
       dispatchToCommander(ctx, Status.Failure(error))
   }
 
   def dispatchToServer(httpConnection: ActorRef)(ctx: RequestContext): Unit = {
-    if (log.isDebugEnabled) log.debug("Dispatching {} across connection {}", format(ctx.request), httpConnection)
+    if (log.isDebugEnabled)
+      log.debug("Dispatching {} across connection {}", format(ctx.request), httpConnection)
     httpConnection ! ctx.request
   }
 
@@ -260,7 +259,7 @@ private class HttpHostConnectionSlot(host: String, port: Int,
       val request = x.message.asInstanceOf[HttpRequest]
       s"${request.method} request to ${request.uri}"
     case MessageChunk(body, _) ⇒ body.length.toString + " byte request chunk"
-    case x                     ⇒ x.toString
+    case other                 ⇒ other.toString
   }
 
   def formatResponse(response: Any): String = response match {

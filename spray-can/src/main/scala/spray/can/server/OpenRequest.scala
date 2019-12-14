@@ -47,7 +47,7 @@ private sealed trait OpenRequest {
   // events
   def handleMessageChunk(chunk: MessageChunk)
   def handleChunkedMessageEnd(part: ChunkedMessageEnd)
-  def handleSentAckAndReturnNextUnconfirmed(ev: AckEventWithReceiver): OpenRequest
+  def handleSentAckAndReturnNextUnconfirmed(evt: AckEventWithReceiver): OpenRequest
   def closedEventHandlers: Set[ActorRef]
 
   def isWaitingForChunkHandler: Boolean
@@ -192,8 +192,8 @@ private trait OpenRequestComponent { component ⇒
       case _                        ⇒ nextInChain handleChunkedMessageEnd part
     }
 
-    def handleSentAckAndReturnNextUnconfirmed(ev: AckEventWithReceiver) = {
-      if (!ev.ack.isInstanceOf[NoAck]) downstreamCommandPL(Pipeline.Tell(ev.receiver, ev.ack, receiverRef))
+    def handleSentAckAndReturnNextUnconfirmed(evt: AckEventWithReceiver) = {
+      if (!evt.ack.isInstanceOf[NoAck]) downstreamCommandPL(Pipeline.Tell(evt.receiver, evt.ack, receiverRef))
       pendingSentAcks -= 1
       // drop this openRequest from the unconfirmed list if we have seen the SentAck for the final response part
       if (pendingSentAcks == 0) nextInChain else this
@@ -258,8 +258,8 @@ private trait OpenRequestComponent { component ⇒
     def handleMessageChunk(chunk: MessageChunk): Unit = { throw new IllegalStateException }
     def handleChunkedMessageEnd(part: ChunkedMessageEnd): Unit = { throw new IllegalStateException }
 
-    def handleSentAckAndReturnNextUnconfirmed(ev: AckEventWithReceiver) =
-      throw new IllegalStateException("Received unmatched send confirmation: " + ev.ack)
+    def handleSentAckAndReturnNextUnconfirmed(evt: AckEventWithReceiver) =
+      throw new IllegalStateException("Received unmatched send confirmation: " + evt.ack)
 
     def closedEventHandlers: Set[ActorRef] = Set.empty
     def isWaitingForChunkHandler: Boolean = false

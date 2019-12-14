@@ -94,11 +94,11 @@ private object ServerFrontend {
 
             case CommandWrapper(SetTimeoutTimeout(timeout)) ⇒ _timeoutTimeout = timeout
 
-            case x @ ConnectionTimeouts.SetIdleTimeout(timeout) ⇒
+            case cmd @ ConnectionTimeouts.SetIdleTimeout(timeout) ⇒
               _idleTimeout = timeout
               if (_requestTimeout.isFinite() && _idleTimeout.isFinite() && _idleTimeout <= _requestTimeout)
                 context.log.warning("Setting an idle-timeout < request-timeout effectively disables the request-timeout!")
-              downstreamCommandPL(x)
+              downstreamCommandPL(cmd)
 
             case cmd ⇒ downstreamCommandPL(cmd)
           }
@@ -133,21 +133,21 @@ private object ServerFrontend {
             case Http.MessageEvent(x: ChunkedMessageEnd) ⇒
               firstOpenRequest handleChunkedMessageEnd x
 
-            case x: AckEventWithReceiver ⇒
-              firstUnconfirmed = firstUnconfirmed handleSentAckAndReturnNextUnconfirmed x
+            case evt: AckEventWithReceiver ⇒
+              firstUnconfirmed = firstUnconfirmed.handleSentAckAndReturnNextUnconfirmed(evt)
 
             case Tcp.CommandFailed(WriteCommandWithLastAck(AckEventWithReceiver(_, part, responseSender))) ⇒
               context.log.error("Could not write response part {}, aborting connection.", part)
               commandPL(Pipeline.Tell(responseSender, Http.SendFailed(part), context.self))
               commandPL(Tcp.Abort)
 
-            case ev: Http.ConnectionClosed ⇒
-              def sendClosed(receiver: ActorRef) = downstreamCommandPL(Pipeline.Tell(receiver, ev, context.self))
+            case evt: Http.ConnectionClosed ⇒
+              def sendClosed(receiver: ActorRef) = downstreamCommandPL(Pipeline.Tell(receiver, evt, context.self))
 
               val interestedParties = firstUnconfirmed.closedEventHandlers + context.handler
               interestedParties.foreach(sendClosed)
 
-              eventPL(ev)
+              eventPL(evt)
 
             case TickGenerator.Tick ⇒
               if (requestTimeout.isFinite())
@@ -158,7 +158,7 @@ private object ServerFrontend {
               context.log.debug("User-level connection handler died, closing connection")
               commandPL(Http.Close)
 
-            case ev ⇒ eventPL(ev)
+            case evt ⇒ eventPL(evt)
           }
 
           def openNewRequest(request: HttpRequest, closeAfterResponseCompletion: Boolean, state: RequestState): Unit = {
