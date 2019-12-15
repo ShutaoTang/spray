@@ -143,10 +143,8 @@ private object ServerFrontend {
 
             case evt: Http.ConnectionClosed ⇒
               def sendClosed(receiver: ActorRef) = downstreamCommandPL(Pipeline.Tell(receiver, evt, context.self))
-
               val interestedParties = firstUnconfirmed.closedEventHandlers + context.handler
               interestedParties.foreach(sendClosed)
-
               eventPL(evt)
 
             case TickGenerator.Tick ⇒
@@ -182,7 +180,6 @@ private object ServerFrontend {
         case Tcp.CompoundWrite(_, tail)           ⇒ lastAck(tail)
         case _                                    ⇒ None
       }
-      // -----------
       lastAck(cmd)
     }
   }

@@ -73,7 +73,7 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
       val commander = sender
       listeners :+= context.watch {
         context.actorOf(
-          props = Props(newHttpListener(commander, bind, httpSettings)) withDispatcher ListenerDispatcher,
+          props = Props(newHttpListener(commander, bind, httpSettings)).withDispatcher(ListenerDispatcher),
           name = "listener-" + listenerCounter.next())
       }
 
@@ -86,14 +86,14 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
   def withTerminationManagement(behavior: Receive): Receive = predefinedBehaviors(behavior) orElse behavior
 
   def predefinedBehaviors(behavior: Receive): Receive = {
-    case ev @ Terminated(child) ⇒
+    case evt @ Terminated(child) ⇒
       if (listeners.contains(child))
         listeners = listeners.filter(_ != child)
       else if (connectors.exists(_._2 == child))
         connectors = connectors.filter { _._2 != child }
       else
         settingsGroups = settingsGroups.filter { _._2 != child }
-      behavior.applyOrElse(ev, (_: Terminated) ⇒ ())
+      behavior.applyOrElse(evt, (_: Terminated) ⇒ ())
 
     case HttpHostConnector.DemandIdleShutdown ⇒
       val hostConnector = sender
@@ -135,7 +135,7 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
 
   def closingConnectors(running: Set[ActorRef], commanders: Set[ActorRef]): Receive =
     withTerminationManagement {
-      case cmd: Http.CloseCommand ⇒ context.become(closingConnectors(running, commanders + sender))
+      case _: Http.CloseCommand ⇒ context.become(closingConnectors(running, commanders + sender))
 
       case Http.ClosedAll ⇒
         val stillRunning = running - sender

@@ -80,11 +80,10 @@ private trait OpenRequestComponent { component ⇒
         if (request.method == HttpMethods.HEAD && settings.transparentHeadRequests)
           request.copy(method = HttpMethods.GET)
         else request
-      val partToDispatch: HttpRequestPart =
-        state match {
-          case _: WaitingForChunkHandler ⇒ ChunkedRequestStart(requestToDispatch)
-          case _                         ⇒ requestToDispatch
-        }
+      val partToDispatch: HttpRequestPart = state match {
+        case _: WaitingForChunkHandler ⇒ ChunkedRequestStart(requestToDispatch)
+        case _                         ⇒ requestToDispatch
+      }
       if (context.log.isDebugEnabled)
         context.log.debug("Dispatching {} to handler {}", format(partToDispatch), handler)
       downstreamCommandPL(Pipeline.Tell(context.handler, partToDispatch, receiverRef))

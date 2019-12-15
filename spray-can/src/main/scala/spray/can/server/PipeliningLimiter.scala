@@ -62,7 +62,7 @@ private object PipeliningLimiter {
               eventPL(evt)
             } else {
               commandPL(Tcp.SuspendReading)
-              parkedRequestParts = parkedRequestParts enqueue evt
+              parkedRequestParts = parkedRequestParts.enqueue(evt)
             }
 
           def handleResponseAck(evt: AckEventWithReceiver): Unit = {

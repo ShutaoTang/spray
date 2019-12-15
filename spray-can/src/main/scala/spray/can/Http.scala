@@ -91,8 +91,8 @@ object Http extends ExtensionKey[HttpExt] {
 
   // we don't use PartialFunction.empty for the default fastPath because we need serializability
   case object EmptyFastPath extends FastPath {
-    def isDefinedAt(x: HttpRequest) = false
-    def apply(x: HttpRequest) = throw new MatchError(x)
+    def isDefinedAt(req: HttpRequest) = false
+    def apply(req: HttpRequest) = throw new MatchError(req)
   }
 
   case class Register(handler: ActorRef, fastPath: FastPath = EmptyFastPath) extends Command
@@ -166,6 +166,6 @@ class HttpExt(system: ExtendedActorSystem) extends akka.io.IO.Extension {
   }
 
   val manager = system.actorOf(
-    props = Props(new HttpManager(Settings)) withDispatcher Settings.ManagerDispatcher,
+    props = Props(new HttpManager(Settings)).withDispatcher(Settings.ManagerDispatcher),
     name = "IO-HTTP")
 }

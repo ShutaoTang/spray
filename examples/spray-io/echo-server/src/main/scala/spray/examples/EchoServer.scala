@@ -11,6 +11,8 @@ import akka.actor._
 object EchoServer extends App {
   // we need an ActorSystem to host our application in
   implicit val system = ActorSystem("echo-server")
+  implicit val bindingTimeout = Timeout(10.second)
+  implicit val executionContext = system.dispatcher // execution context for the future
 
   // and our actual server "service" actor
   val server = system.actorOf(Props[EchoServerActor], name = "echo-server")
@@ -18,9 +20,6 @@ object EchoServer extends App {
   // we bind the server to a port on localhost and hook
   // in a continuation that informs us when bound
   val endpoint = new InetSocketAddress("localhost", 23456)
-  implicit val bindingTimeout = Timeout(10.second)
-  import system.dispatcher // execution context for the future
-
   val boundFuture = IO(Tcp) ? Tcp.Bind(server, endpoint)
 
   boundFuture.onSuccess { case Tcp.Bound(address) =>
@@ -35,9 +34,11 @@ class EchoServerActor extends Actor with ActorLogging {
   def receive = {
     case Tcp.Connected(_, _) =>
       val tcpConnection = sender
-      val newChild = context.watch(context.actorOf(Props(new EchoServerConnection(tcpConnection))))
+      val serverConnection = context.actorOf(Props(new EchoServerConnection(tcpConnection)))
+      context.watch(serverConnection)
+
       childrenCount += 1
-      sender ! Tcp.Register(newChild)
+      sender ! Tcp.Register(serverConnection)
       log.debug("Registered for new connection")
 
     case Terminated(_) if childrenCount > 0 =>
@@ -65,8 +66,8 @@ class EchoServerConnection(tcpConnection: ActorRef) extends Actor with ActorLogg
       tcpConnection ! Tcp.Write(data, ack = SentOk)
       context.become(waitingForAck)
 
-    case x: Tcp.ConnectionClosed =>
-      log.debug("Connection closed: {}", x)
+    case evt: Tcp.ConnectionClosed =>
+      log.debug("Connection closed: {}", evt)
       context.stop(self)
   }
 
@@ -78,8 +79,8 @@ class EchoServerConnection(tcpConnection: ActorRef) extends Actor with ActorLogg
     case SentOk =>
       context.become(idle)
 
-    case x: Tcp.ConnectionClosed =>
-      log.debug("Connection closed: {}, waiting for pending ACK", x)
+    case evt: Tcp.ConnectionClosed =>
+      log.debug("Connection closed: {}, waiting for pending ACK", evt)
       context.become(waitingForAckWithQueuedData(Queue.empty, closed = true))
   }
 
@@ -102,8 +103,8 @@ class EchoServerConnection(tcpConnection: ActorRef) extends Actor with ActorLogg
         tcpConnection ! Tcp.Write(queuedData.head, ack = SentOk)
         context.become(waitingForAckWithQueuedData(queuedData.tail, closed))
 
-      case x: Tcp.ConnectionClosed =>
-        log.debug("Connection closed: {}, waiting for completion of {} pending writes", x, queuedData.size)
+      case evt: Tcp.ConnectionClosed =>
+        log.debug("Connection closed: {}, waiting for completion of {} pending writes", evt, queuedData.size)
         context.become(waitingForAckWithQueuedData(queuedData, closed = true))
     }
 
