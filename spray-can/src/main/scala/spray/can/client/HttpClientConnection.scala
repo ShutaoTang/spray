@@ -63,9 +63,9 @@ private class HttpClientConnection(connectCommander: ActorRef,
 
   override def running(tcpConnection: ActorRef, pipelines: Pipelines): Receive =
     super.running(tcpConnection, pipelines) orElse {
-      case x: HttpRequestPart                   ⇒ pipelines.commandPipeline(Http.MessageCommand(x))
-      case x @ Confirmed(_: HttpRequestPart, _) ⇒ pipelines.commandPipeline(Http.MessageCommand(x))
-      case x: SetRequestTimeout                 ⇒ pipelines.commandPipeline(CommandWrapper(x))
+      case cmd: HttpRequestPart                   ⇒ pipelines.commandPipeline(Http.MessageCommand(cmd))
+      case cmd @ Confirmed(_: HttpRequestPart, _) ⇒ pipelines.commandPipeline(Http.MessageCommand(cmd))
+      case cmd: SetRequestTimeout                 ⇒ pipelines.commandPipeline(CommandWrapper(cmd))
     }
 
   def pipelineContext(connected: Tcp.Connected) = new SslTlsContext {

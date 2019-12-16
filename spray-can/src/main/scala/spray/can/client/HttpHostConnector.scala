@@ -146,7 +146,8 @@ private[can] class HttpHostConnector(normalizedSetup: Http.HostConnectorSetup, c
       case (s, SlotState.Unconnected) ⇒
         require(s != Some(SlotState.Unconnected))
         unconnectedConnections ::= child
-        if (s == Some(SlotState.Idle)) idleConnections = idleConnections.filterNot(_ == child)
+        if (s == Some(SlotState.Idle))
+          idleConnections = idleConnections.filterNot(_ == child)
       case (Some(SlotState.Connected(_)), SlotState.Idle) ⇒ idleConnections ::= child
 
       case (Some(SlotState.Unconnected), SlotState.Connected(_)) ⇒
@@ -178,18 +179,18 @@ private[can] class HttpHostConnector(normalizedSetup: Http.HostConnectorSetup, c
   sealed abstract class DispatchStrategy {
     private[this] var queue = Queue.empty[RequestContext]
 
-    def apply(ctx: RequestContext): Unit =
-      pickConnection match {
-        case Some(connection) ⇒ dispatch(ctx, connection)
-        case None             ⇒ queue = queue.enqueue(ctx)
-      }
+    def apply(ctx: RequestContext): Unit = pickConnection match {
+      case Some(connection) ⇒ dispatch(ctx, connection)
+      case None             ⇒ queue = queue.enqueue(ctx)
+    }
 
     def onConnectionStateChange(): Unit =
-      if (queue.nonEmpty)
+      if (queue.nonEmpty) {
         pickConnection foreach { connection ⇒
           dispatch(queue.head, connection)
           queue = queue.tail
         }
+      }
 
     // picks a connection to schedule the next request to, returns None if no connection
     // is currently available and the next request therefore needs to be queued
@@ -225,7 +226,11 @@ private[can] class HttpHostConnector(normalizedSetup: Http.HostConnectorSetup, c
           case (child, SlotState.Unconnected)     ⇒ true
           case (child, SlotState.Idle)            ⇒ true
         }
-        slotStates.toSeq.filter(onlyIdempotent).sortBy(_._2.openRequestCount).headOption.map(_._1)
+        slotStates.toSeq
+          .filter(onlyIdempotent)
+          .sortBy(_._2.openRequestCount)
+          .headOption
+          .map(_._1)
       }
     }
 }

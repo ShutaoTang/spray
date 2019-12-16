@@ -226,7 +226,7 @@ private trait OpenRequestComponent { component ⇒
         val request = part.message.asInstanceOf[HttpRequest]
         s"${request.method} request to ${request.uri}"
       case MessageChunk(body, _) ⇒ body.length.toString + " byte request chunk"
-      case x                     ⇒ x.toString
+      case other                 ⇒ other.toString
     }
 
     def isWaitingForChunkHandler: Boolean = state.isInstanceOf[WaitingForChunkHandler]
@@ -306,7 +306,7 @@ private sealed abstract class WaitingForChunkHandler extends RequestState {
 
 /** Got a ChunkedRequestStart, waiting for chunk handler to register */
 private case class WaitingForChunkHandlerBuffering(
-  timestamp: Timestamp = Timestamp.now,
+  timestamp: Timestamp = Timestamp.now(),
   receivedChunks: Queue[HttpRequestPart] = Queue.empty) extends WaitingForChunkHandler
 
 /** Got ChunkedMessageEnd, waiting for chunk handler to register */
@@ -318,13 +318,13 @@ private case class WaitingForChunkHandlerReceivedAll(
 private case class ReceivingRequestChunks(chunkHandler: ActorRef) extends RequestState
 
 /** Request was fully delivered waiting for response */
-private case class WaitingForResponse(handler: ActorRef, timestamp: Timestamp = Timestamp.now) extends RequestState
+private case class WaitingForResponse(handler: ActorRef, timestamp: Timestamp = Timestamp.now()) extends RequestState
 
 /** ChunkedRequestStart was sent waiting for remaining chunks */
 private case class StreamingResponseChunks(lastSender: ActorRef) extends RequestState
 
 /** Timed-out while waiting for request, `Timeout` was dispatched, now waiting for timeout response */
-private case class WaitingForTimeoutResponse(timestamp: Timestamp = Timestamp.now) extends RequestState
+private case class WaitingForTimeoutResponse(timestamp: Timestamp = Timestamp.now()) extends RequestState
 
 /** Waiting for ack of last ResponseEnd */
 private case class WaitingForFinalResponseAck(lastSender: ActorRef) extends RequestState

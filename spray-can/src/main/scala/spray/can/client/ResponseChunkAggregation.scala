@@ -32,7 +32,7 @@ private object ResponseChunkAggregation {
             case Http.MessageEvent(ChunkedResponseStart(response)) ⇒
               eventPipeline.become(aggregating(response, HttpData.newBuilder += response.entity.data))
 
-            case ev ⇒ eventPL(ev)
+            case evt ⇒ eventPL(evt)
           }
 
           def aggregating(response: HttpResponse, builder: HttpData.Builder): EPL = {
@@ -49,7 +49,7 @@ private object ResponseChunkAggregation {
               eventPL(Http.MessageEvent(response.copy(entity = HttpEntity(contentType, builder.result()))))
               eventPipeline.become(initialEventPipeline)
 
-            case ev ⇒ eventPL(ev)
+            case evt ⇒ eventPL(evt)
           }
 
           def closeWithError(): Unit = {

@@ -27,7 +27,7 @@ import spray.util.{ Timestamp, PaddedAtomicLong }
 private object StatsSupport {
 
   class StatsHolder {
-    val startTimestamp = Timestamp.now
+    val startTimestamp = Timestamp.now()
     val requestStarts = new PaddedAtomicLong
     val responseStarts = new PaddedAtomicLong
     val maxOpenRequests = new PaddedAtomicLong
@@ -57,7 +57,7 @@ private object StatsSupport {
     }
 
     def toStats = Stats(
-      uptime = (Timestamp.now - startTimestamp).asInstanceOf[FiniteDuration],
+      uptime = (Timestamp.now() - startTimestamp).asInstanceOf[FiniteDuration],
       totalRequests = requestStarts.get,
       openRequests = requestStarts.get - responseStarts.get,
       maxOpenRequests = maxOpenRequests.get,

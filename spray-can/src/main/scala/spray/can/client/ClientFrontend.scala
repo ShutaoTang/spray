@@ -43,7 +43,9 @@ private object ClientFrontend {
             case Http.MessageCommand(HttpMessagePartWrapper(x: HttpRequest, ack)) if closeCommanders.isEmpty ⇒
               if (lastRequestComplete) {
                 render(x, x, ack)
-                val state = if (openRequests.isEmpty) AwaitingResponseStart(Timestamp.now) else AwaitingPreviousResponseEnd
+                val state =
+                  if (openRequests.isEmpty) AwaitingResponseStart(Timestamp.now())
+                  else AwaitingPreviousResponseEnd
                 openRequests = openRequests enqueue new RequestRecord(x, context.sender, state)
               } else log.warning("Received new HttpRequest before previous chunking request was finished, ignoring...")
 
@@ -61,7 +63,7 @@ private object ClientFrontend {
             case Http.MessageCommand(HttpMessagePartWrapper(x: ChunkedMessageEnd, ack)) if closeCommanders.isEmpty ⇒
               if (!lastRequestComplete) {
                 render(x, openRequests.last.request.message, ack)
-                openRequests.last.state = AwaitingResponseStart(Timestamp.now) // only start timer once the request is completed
+                openRequests.last.state = AwaitingResponseStart(Timestamp.now()) // only start timer once the request is completed
               } else log.warning("Received ChunkedMessageEnd outside of chunking request context, ignoring...")
 
             case Http.MessageCommand(HttpMessagePartWrapper(x: HttpRequestPart, _)) if closeCommanders.nonEmpty ⇒
@@ -84,7 +86,7 @@ private object ClientFrontend {
                 if (openRequests.nonEmpty)
                   openRequests.head.state = openRequests.head.state match {
                     case AwaitingChunkEnd            ⇒ AwaitingChunkEnd
-                    case AwaitingPreviousResponseEnd ⇒ AwaitingResponseStart(Timestamp.now)
+                    case AwaitingPreviousResponseEnd ⇒ AwaitingResponseStart(Timestamp.now())
                     case _: AwaitingResponseStart    ⇒ throw new IllegalStateException
                   }
                 dispatch(currentRecord.sender, x)

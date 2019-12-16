@@ -23,7 +23,7 @@ private[can] class HttpClientSettingsGroup(settings: ClientConnectionSettings, h
   val connectionCounter = Iterator from 0
   val pipelineStage = HttpClientConnection.pipelineStage(settings)
 
-  def receive = {
+  def receive: Receive = {
     case connect: Http.Connect ⇒
       val commander = sender
       context.actorOf(

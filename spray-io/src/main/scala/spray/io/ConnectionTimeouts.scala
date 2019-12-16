@@ -39,7 +39,7 @@ object ConnectionTimeouts {
       def apply(context: PipelineContext, commandPL: CPL, eventPL: EPL): Pipelines = new DynamicPipelines { outer ⇒
         var timeout = idleTimeout
         var idleDeadline = Timestamp.never
-        def resetDeadline() = idleDeadline = Timestamp.now + timeout
+        def resetDeadline() = idleDeadline = Timestamp.now() + timeout
 
         become(atWork(writePossiblyPending = false))
 

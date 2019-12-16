@@ -149,7 +149,7 @@ private object ServerFrontend {
 
             case TickGenerator.Tick ⇒
               if (requestTimeout.isFinite())
-                firstOpenRequest checkForTimeout Timestamp.now
+                firstOpenRequest checkForTimeout Timestamp.now()
               eventPL(TickGenerator.Tick)
 
             case Pipeline.ActorDeath(actor) if actor == context.handler ⇒

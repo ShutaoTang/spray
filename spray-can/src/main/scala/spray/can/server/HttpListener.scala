@@ -114,7 +114,7 @@ private[can] class HttpListener(bindCommander: ActorRef, bind: Http.Bind, httpSe
       else {
         context.setReceiveTimeout(Duration.Undefined)
         self ! Tick
-        context.become(gracePeriod(Timestamp.now + gracePeriodTimeout))
+        context.become(gracePeriod(Timestamp.now() + gracePeriodTimeout))
       }
 
     case ReceiveTimeout ⇒

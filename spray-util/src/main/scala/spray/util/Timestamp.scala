@@ -21,7 +21,7 @@ private[spray] class Timestamp private (val timestampNanos: Long) extends AnyVal
   def isNever: Boolean = timestampNanos == Long.MaxValue
 }
 private[spray] object Timestamp {
-  def now: Timestamp = new Timestamp(System.nanoTime())
+  def now(): Timestamp = new Timestamp(System.nanoTime())
   def never: Timestamp = new Timestamp(Long.MaxValue)
 
   implicit val timestampOrdering: Ordering[Timestamp] = new Ordering[Timestamp] {

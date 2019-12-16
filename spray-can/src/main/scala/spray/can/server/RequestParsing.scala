@@ -76,7 +76,7 @@ private[can] object RequestParsing {
             commandPL(ResponsePartRenderingContext(HttpResponse(status, msg), closeAfterResponseCompletion = true))
 
             // TODO: remove timeout handling once ConfirmedClose has its own
-            timeout = Timestamp.now + settings.parsingErrorAbortTimeout
+            timeout = Timestamp.now() + settings.parsingErrorAbortTimeout
             parser = Result.IgnoreAllFurtherInput
           }
 

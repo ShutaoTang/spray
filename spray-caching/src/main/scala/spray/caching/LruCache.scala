@@ -188,13 +188,13 @@ final class ExpiringLruCache[V](maxCapacity: Long, initialCapacity: Int,
 }
 
 private[caching] class Entry[T](val promise: Promise[T]) {
-  @volatile var created = Timestamp.now
-  @volatile var lastAccessed = Timestamp.now
+  @volatile var created = Timestamp.now()
+  @volatile var lastAccessed = Timestamp.now()
 
   def future = promise.future
   def refresh(): Unit = {
     // we dont care whether we overwrite a potentially newer value
-    lastAccessed = Timestamp.now
+    lastAccessed = Timestamp.now()
   }
   override def toString = future.value match {
     case Some(Success(value))     ⇒ value.toString

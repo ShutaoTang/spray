@@ -27,8 +27,9 @@ import RequestParsing._
 /**
  * The PipeliningLimiter tries to limit how much work an external requester can
  * produce by sending lots of pipelined request directly after each other. It works
- * by only permitting a limited number of open requests after which 1. incoming data
- * flow is stopped and 2. incoming requests which are already parsed are put into a queue.
+ * by only permitting a limited number of open requests after which
+ *  1. incoming data flow is stopped and
+ *  2. incoming requests which are already parsed are put into a queue.
  *
  * Some things to keep in mind:
  *   * It may take quite a while until Tcp.SuspendReading gets to the networking part. In

@@ -30,7 +30,8 @@ case class ProxySettings(host: String, port: Int, nonProxyHosts: List[String]) {
   private def validIgnore(pattern: String) = pattern.exists(_ != '*') && !pattern.drop(1).dropRight(1).contains('*')
 
   val matchesHost: String ⇒ Boolean = {
-    @tailrec def rec(remainingNonProxyHosts: List[String], result: String ⇒ Boolean): String ⇒ Boolean =
+    @tailrec
+    def rec(remainingNonProxyHosts: List[String], result: String ⇒ Boolean): String ⇒ Boolean =
       remainingNonProxyHosts match {
         case Nil ⇒ result
         case pattern :: remaining ⇒
