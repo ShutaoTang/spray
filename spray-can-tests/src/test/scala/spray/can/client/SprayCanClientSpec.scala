@@ -558,9 +558,7 @@ class SprayCanClientSpec extends Specification with NoTimeConversions {
     def sendViaProxiedConnector(hostname: String, port: Int, settingsConf: Config = testConf,
                                 connectionType: ClientConnectionType = ClientConnectionType.AutoProxied): (TestProbe, ActorRef) = {
       val probe = TestProbe()
-      val settings = HostConnectorSettings(settingsConf
-        .withFallback(testConf)
-        .withFallback(ConfigFactory.load()))
+      val settings = HostConnectorSettings(settingsConf.withFallback(testConf).withFallback(ConfigFactory.load()))
       probe.send(IO(Http), Http.HostConnectorSetup(hostname, port, settings = Some(settings), connectionType = connectionType))
       val Http.HostConnectorInfo(hostConnector, _) = probe.expectMsgType[Http.HostConnectorInfo]
       probe.sender === hostConnector

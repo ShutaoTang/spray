@@ -102,7 +102,7 @@ object PipelineContext {
     def localAddress: InetSocketAddress = _localAddress
     def log: LoggingAdapter = _log
   }
-  implicit def pipelineContext2ActorContext(plc: PipelineContext): ActorContext = plc.actorContext
+  implicit def autoToActorContext(ctx: PipelineContext): ActorContext = ctx.actorContext
 }
 
 trait RawPipelineStage[-C <: PipelineContext] { left ⇒

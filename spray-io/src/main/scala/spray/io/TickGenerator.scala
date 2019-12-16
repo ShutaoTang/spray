@@ -46,6 +46,7 @@ object TickGenerator {
 
           def scheduleNext() = {
             implicit val executionContext = context.dispatcher
+            // Note that the implicit convert autoToActorContext in the companion object of PipelineContext
             context.system.scheduler.scheduleOnce(period.asInstanceOf[FiniteDuration], context.self, Tick)
           }
         }

@@ -195,8 +195,10 @@ class HttpClientConnectionPipelineSpec extends Specification with RawSpecs2Pipel
       reaping-cycle = infinite  # don't enable the TickGenerator
     }""")
 
-  override def createPipelineContext(_actorContext: ActorContext, _remoteAddress: InetSocketAddress,
-                                     _localAddress: InetSocketAddress, _log: LoggingAdapter) =
+  override def createPipelineContext(_actorContext: ActorContext,
+                                     _remoteAddress: InetSocketAddress,
+                                     _localAddress: InetSocketAddress,
+                                     _log: LoggingAdapter) =
     new SslTlsContext {
       def actorContext: ActorContext = _actorContext
       def remoteAddress: InetSocketAddress = _remoteAddress

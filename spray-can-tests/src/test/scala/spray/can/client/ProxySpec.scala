@@ -25,18 +25,18 @@ class ProxySpec extends Specification {
   val http = Uri.httpScheme()
 
   "ProxySupport" should {
-    def proxytest(proxyConf: String)(host: String) = {
+    def proxyTest(proxyConf: String)(host: String) = {
       val proxySettings = ProxySettings(parseString(proxyConf), Map.empty[String, String])
       proxySettings.get(http).filter(_.matchesHost(host))
     }
 
     "ignore missing proxy settings" in {
-      proxytest("""
+      proxyTest("""
         http = none
         https = none""")("example.com") === None
     }
     "use existing proxy settings" in {
-      proxytest("""
+      proxyTest("""
         http {
           host = some-proxy.com
           port = 8080
@@ -45,7 +45,7 @@ class ProxySpec extends Specification {
         https = none""")("example.com") must beLike { case Some(ProxySettings("some-proxy.com", 8080, _)) ⇒ ok }
     }
     "correctly ignore non-proxy-hosts" in {
-      val withIgnore = proxytest("""
+      val withIgnore = proxyTest("""
         http {
           host = some-proxy.com
           port = 8080

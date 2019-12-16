@@ -151,8 +151,8 @@ class PipelineLimiterSpec extends Specification with Specs2PipelineStageTest wit
     }
   }
 
-  def request(body: String) = HttpMessageStartEvent(HttpRequest(entity = body), false)
-  def requestStart(body: String) = HttpMessageStartEvent(ChunkedRequestStart(HttpRequest(entity = body)), false)
+  def request(body: String) = HttpMessageStartEvent(HttpRequest(entity = body), closeAfterResponseCompletion = false)
+  def requestStart(body: String) = HttpMessageStartEvent(ChunkedRequestStart(HttpRequest(entity = body)), closeAfterResponseCompletion = false)
   def requestChunk(body: String) = Http.MessageEvent(MessageChunk(body))
   def requestEnd(ext: String) = Http.MessageEvent(ChunkedMessageEnd(ext))
 
