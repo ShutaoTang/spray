@@ -303,7 +303,8 @@ class SslTlsSupportSpec extends Specification with NoTimeConversions {
 
     sealed abstract class SslConnection {
       val events = TestProbe()
-      @tailrec final def expectReceivedString(data: String): Unit = {
+      @tailrec
+      final def expectReceivedString(data: String): Unit = {
         data.isEmpty must beFalse
         val got = events.expectMsgType[Tcp.Received].data.utf8String
         data.startsWith(got) must beTrue

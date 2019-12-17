@@ -26,7 +26,6 @@ import spray.can.rendering.ResponsePartRenderingContext
 import spray.http._
 import spray.can.server.RequestParsing.HttpMessageStartEvent
 import akka.io.Tcp.NoAck
-import akka.actor.DeadLetterActorRef
 import akka.testkit.TestProbe
 
 class PipelineLimiterSpec extends Specification with Specs2PipelineStageTest with NoTimeConversions {

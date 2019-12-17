@@ -44,15 +44,17 @@ trait RawPipelineStageTest { test ⇒
   def actorSystem(config: Map[String, _]): ActorSystem = actorSystem(Utils.mapToConfig(config))
   def actorSystem(config: Config): ActorSystem = ActorSystem("PipelineStageTest", config withFallback testConf)
 
-  def cleanUp(): Unit = { system.shutdown() }
+  def cleanUp(): Unit = system.shutdown()
 
   def remoteHostName = "example.com"
   def remoteHostPost = 8080
   def localHostName = "127.0.0.1"
   def localHostPost = 32598
 
-  def createPipelineContext(actorContext: ActorContext, remoteAddress: InetSocketAddress,
-                            localAddress: InetSocketAddress, log: LoggingAdapter): Context = ???
+  def createPipelineContext(actorContext: ActorContext,
+                            remoteAddress: InetSocketAddress,
+                            localAddress: InetSocketAddress,
+                            log: LoggingAdapter): Context = ???
 
   class BaseFixture(stage: RawPipelineStage[Context],
                     remoteAddress: InetSocketAddress = new InetSocketAddress(remoteHostName, remoteHostPost),
@@ -63,21 +65,22 @@ trait RawPipelineStageTest { test ⇒
 
     lazy val connectionActor = TestActorRef(new ConnectionHandlerTestActor)
 
-    lazy val pipelineContext = createPipelineContext(connectionActor.underlyingActor.theContext, remoteAddress,
-      localAddress, log)
+    lazy val pipelineContext = createPipelineContext(connectionActor.underlyingActor.theContext, remoteAddress, localAddress, log)
 
     lazy val pipelines: Pipelines = stage(pipelineContext, commands.ref ! _, events.ref ! _)
 
     // override if you need per-Fixture PipelineContexts rather than per-test instances
-    def createPipelineContext(actorContext: ActorContext, remoteAddress: InetSocketAddress,
-                              localAddress: InetSocketAddress, log: LoggingAdapter): Context =
+    def createPipelineContext(actorContext: ActorContext,
+                              remoteAddress: InetSocketAddress,
+                              localAddress: InetSocketAddress,
+                              log: LoggingAdapter): Context =
       test.createPipelineContext(actorContext, remoteAddress, localAddress, log)
 
     class ConnectionHandlerTestActor extends Actor {
       def theContext = context // make publicly visible
       def receive: Receive = {
-        case x: Command        ⇒ pipelines.commandPipeline(x)
-        case x: Event          ⇒ pipelines.eventPipeline(x)
+        case cmd: Command      ⇒ pipelines.commandPipeline(cmd)
+        case evt: Event        ⇒ pipelines.eventPipeline(evt)
         case Terminated(actor) ⇒ pipelines.eventPipeline(Pipeline.ActorDeath(actor))
       }
     }
@@ -95,8 +98,10 @@ trait RawPipelineStageTest { test ⇒
 
 trait DefaultPipelineStageTest extends RawPipelineStageTest {
   type Context = PipelineContext
-  override def createPipelineContext(actorContext: ActorContext, remoteAddress: InetSocketAddress,
-                                     localAddress: InetSocketAddress, log: LoggingAdapter) =
+  override def createPipelineContext(actorContext: ActorContext,
+                                     remoteAddress: InetSocketAddress,
+                                     localAddress: InetSocketAddress,
+                                     log: LoggingAdapter) =
     PipelineContext(actorContext, remoteAddress, localAddress, log)
 }
 

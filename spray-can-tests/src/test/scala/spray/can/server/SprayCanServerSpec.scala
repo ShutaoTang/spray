@@ -226,7 +226,7 @@ class SprayCanServerSpec extends Specification with NoTimeConversions {
       probe.expectMsgType[HttpResponse].entity === HttpEntity("fast")
     }
 
-    "provide access to the undecoded URI via a header if spray.can.raw-request-uri-header is enabled" in {
+    "provide access to the un-decoded URI via a header if spray.can.raw-request-uri-header is enabled" in {
       class RawRequestTestSetup(target: String, protocol: HttpProtocol) extends TestSetup {
         def request: List[String] = s"GET $target $protocol" :: Nil
         def headers: List[HttpHeader] = HttpHeaders.`Raw-Request-URI`(target) :: Nil
@@ -325,11 +325,11 @@ class SprayCanServerSpec extends Specification with NoTimeConversions {
 
     def readAll(socket: Socket)(reader: BufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream))): (String, BufferedReader) = {
       val sb = new java.lang.StringBuilder
-      val cbuf = new Array[Char](256)
+      val chars = new Array[Char](256)
       @tailrec
-      def drain(): (String, BufferedReader) = reader.read(cbuf) match {
+      def drain(): (String, BufferedReader) = reader.read(chars) match {
         case -1 ⇒ sb.toString -> reader
-        case n  ⇒ sb.append(cbuf, 0, n); drain()
+        case n  ⇒ sb.append(chars, 0, n); drain()
       }
       drain()
     }
