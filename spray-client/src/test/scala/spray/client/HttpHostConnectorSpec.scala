@@ -34,7 +34,7 @@ import spray.http._
 import spray.util._
 
 class HttpHostConnectorSpec extends Specification with NoTimeConversions {
-  implicit val timeout: Timeout = 5.seconds
+  implicit val timeout = Timeout(5.seconds)
   val testConf = ConfigFactory.parseString("""
     akka.logger = ["akka.testkit.TestEventListener"]
     akka.loglevel = WARNING
@@ -58,18 +58,18 @@ class HttpHostConnectorSpec extends Specification with NoTimeConversions {
           case _: Http.Connected ⇒ sender ! Http.Register(self)
           case HttpRequest(_, Uri.Path("/compressedResponse"), _, _, _) ⇒
             sender ! Gzip.encode(HttpResponse(entity = "content"))
-          case x: HttpRequest if x.uri.path.toString.startsWith("/drop1of2") && dropNext ⇒
-            log.info("Dropping " + x)
+          case req: HttpRequest if req.uri.path.toString.startsWith("/drop1of2") && dropNext ⇒
+            log.info("Dropping " + req)
             dropNext = random.nextBoolean()
-          case x: HttpRequest if x.uri.path.toString.startsWith("/closeConnection") ⇒
+          case req: HttpRequest if req.uri.path.toString.startsWith("/closeConnection") ⇒
             sender ! HttpResponse(entity = "now closing", headers = List(HttpHeaders.Connection("close")))
-          case x @ HttpRequest(method, uri, _, entity, _) ⇒
-            log.debug("Responding to " + x)
+          case req @ HttpRequest(method, uri, _, entity, _) ⇒
+            log.debug("Responding to " + req)
             dropNext = random.nextBoolean()
-            val mirroredHeaders = x.header[HttpHeaders.`User-Agent`].toList
+            val mirroredHeaders = req.header[HttpHeaders.`User-Agent`].toList
             sender ! HttpResponse(entity = method + "|" + uri.path + (if (entity.isEmpty) "" else "|" + entity.asString), headers = mirroredHeaders)
-          case Timedout(request)         ⇒ sender ! HttpResponse(entity = "TIMEOUT")
-          case ev: Http.ConnectionClosed ⇒ log.debug("Received " + ev)
+          case Timedout(request)          ⇒ sender ! HttpResponse(entity = "TIMEOUT")
+          case evt: Http.ConnectionClosed ⇒ log.debug("Received " + evt)
         }
       }), "handler")
     IO(Http).ask(Http.Bind(testService, interface, port))(3.seconds).await

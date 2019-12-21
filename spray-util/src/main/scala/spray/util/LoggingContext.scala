@@ -30,27 +30,26 @@ import akka.actor._
 trait LoggingContext extends LoggingAdapter
 
 object LoggingContext extends LoggingContextLowerOrderImplicit1 {
-  implicit def fromAdapter(implicit la: LoggingAdapter) = new LoggingContext {
-    def isErrorEnabled = la.isErrorEnabled
-    def isWarningEnabled = la.isWarningEnabled
-    def isInfoEnabled = la.isInfoEnabled
-    def isDebugEnabled = la.isDebugEnabled
+  implicit def fromAdapter(implicit loggingAdapter: LoggingAdapter) = new LoggingContext {
+    def isErrorEnabled = loggingAdapter.isErrorEnabled
+    def isWarningEnabled = loggingAdapter.isWarningEnabled
+    def isInfoEnabled = loggingAdapter.isInfoEnabled
+    def isDebugEnabled = loggingAdapter.isDebugEnabled
 
-    protected def notifyError(message: String): Unit = la.error(message)
-    protected def notifyError(cause: Throwable, message: String): Unit = la.error(cause, message)
-    protected def notifyWarning(message: String): Unit = la.warning(message)
-    protected def notifyInfo(message: String): Unit = la.info(message)
-    protected def notifyDebug(message: String): Unit = la.debug(message)
+    protected def notifyError(message: String): Unit = loggingAdapter.error(message)
+    protected def notifyError(cause: Throwable, message: String): Unit = loggingAdapter.error(cause, message)
+    protected def notifyWarning(message: String): Unit = loggingAdapter.warning(message)
+    protected def notifyInfo(message: String): Unit = loggingAdapter.info(message)
+    protected def notifyDebug(message: String): Unit = loggingAdapter.debug(message)
   }
 }
 
 private[util] sealed abstract class LoggingContextLowerOrderImplicit1 extends LoggingContextLowerOrderImplicit2 {
   this: LoggingContext.type ⇒
-  implicit def fromActorRefFactory(implicit refFactory: ActorRefFactory) =
-    refFactory match {
-      case x: ActorSystem  ⇒ fromActorSystem(x)
-      case x: ActorContext ⇒ fromActorContext(x)
-    }
+  implicit def fromActorRefFactory(implicit refFactory: ActorRefFactory) = refFactory match {
+    case actorSystem: ActorSystem   ⇒ fromActorSystem(actorSystem)
+    case actorContext: ActorContext ⇒ fromActorContext(actorContext)
+  }
   def fromActorSystem(system: ActorSystem) = fromAdapter(system.log)
   def fromActorContext(context: ActorContext) = fromAdapter(Logging(context.system.eventStream, context.self))
 }
@@ -60,5 +59,3 @@ private[util] sealed abstract class LoggingContextLowerOrderImplicit2 {
   implicit val NoLogging = fromAdapter(akka.event.NoLogging)
 }
 
-@deprecated("Please use akka.actor.ActorLogging directly instead!", "after M8")
-trait SprayActorLogging extends akka.actor.ActorLogging { _: Actor ⇒ }
