@@ -43,21 +43,19 @@ sealed trait HttpMessagePart extends HttpMessagePartWrapper {
 sealed trait HttpRequestPart extends HttpMessagePart
 
 object HttpRequestPart {
-  def unapply(wrapper: HttpMessagePartWrapper): Option[(HttpRequestPart, Option[Any])] =
-    wrapper.messagePart match {
-      case x: HttpRequestPart ⇒ Some((x, wrapper.ack))
-      case _                  ⇒ None
-    }
+  def unapply(wrapper: HttpMessagePartWrapper): Option[(HttpRequestPart, Option[Any])] = wrapper.messagePart match {
+    case requestPart: HttpRequestPart ⇒ Some((requestPart, wrapper.ack))
+    case _                            ⇒ None
+  }
 }
 
 sealed trait HttpResponsePart extends HttpMessagePart
 
 object HttpResponsePart {
-  def unapply(wrapper: HttpMessagePartWrapper): Option[(HttpResponsePart, Option[Any])] =
-    wrapper.messagePart match {
-      case x: HttpResponsePart ⇒ Some((x, wrapper.ack))
-      case _                   ⇒ None
-    }
+  def unapply(wrapper: HttpMessagePartWrapper): Option[(HttpResponsePart, Option[Any])] = wrapper.messagePart match {
+    case responsePart: HttpResponsePart ⇒ Some((responsePart, wrapper.ack))
+    case _                              ⇒ None
+  }
 }
 
 sealed trait HttpMessageStart extends HttpMessagePart {
@@ -85,12 +83,12 @@ sealed abstract class HttpMessage extends HttpMessageStart with HttpMessageEnd {
 
   def withHeaders(headers: HttpHeader*): Self = withHeaders(headers.toList)
   def withDefaultHeaders(defaultHeaders: List[HttpHeader]) = {
-    @tailrec def patch(remaining: List[HttpHeader], result: List[HttpHeader] = headers): List[HttpHeader] =
-      remaining match {
-        case h :: rest if result.exists(_.is(h.lowercaseName)) ⇒ patch(rest, result)
-        case h :: rest ⇒ patch(rest, h :: result)
-        case Nil ⇒ result
-      }
+    @tailrec
+    def patch(remaining: List[HttpHeader], result: List[HttpHeader] = headers): List[HttpHeader] = remaining match {
+      case h :: rest if result.exists(_.is(h.lowercaseName)) ⇒ patch(rest, result)
+      case h :: rest ⇒ patch(rest, h :: result)
+      case Nil ⇒ result
+    }
     withHeaders(patch(defaultHeaders))
   }
   def withHeaders(headers: List[HttpHeader]): Self
@@ -114,7 +112,8 @@ sealed abstract class HttpMessage extends HttpMessageStart with HttpMessageEnd {
 
   def header[T <: HttpHeader: ClassTag]: Option[T] = {
     val erasure = classTag[T].runtimeClass
-    @tailrec def next(headers: List[HttpHeader]): Option[T] =
+    @tailrec
+    def next(headers: List[HttpHeader]): Option[T] =
       if (headers.isEmpty) None
       else if (erasure.isInstance(headers.head)) Some(headers.head.asInstanceOf[T]) else next(headers.tail)
     next(headers)
@@ -227,7 +226,8 @@ case class HttpRequest(method: HttpMethod = HttpMethods.GET,
     ranges match {
       case Nil ⇒ 1.0f // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.2
       case x ⇒
-        @tailrec def rec(r: List[HttpCharsetRange] = x): Float = r match {
+        @tailrec
+        def rec(r: List[HttpCharsetRange] = x): Float = r match {
           case Nil          ⇒ if (charset == `ISO-8859-1`) 1f else 0f
           case head :: tail ⇒ if (head.matches(charset)) head.qValue else rec(tail)
         }
@@ -247,7 +247,8 @@ case class HttpRequest(method: HttpMethod = HttpMethods.GET,
     ranges match {
       case Nil ⇒ 1.0f // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3
       case x ⇒
-        @tailrec def rec(r: List[HttpEncodingRange] = x): Float = r match {
+        @tailrec
+        def rec(r: List[HttpEncodingRange] = x): Float = r match {
           case Nil          ⇒ 0f
           case head :: tail ⇒ if (head.matches(encoding)) head.qValue else rec(tail)
         }
@@ -263,7 +264,8 @@ case class HttpRequest(method: HttpMethod = HttpMethods.GET,
     val mediaRanges = acceptedMediaRanges // cache for performance
     val charsetRanges = acceptedCharsetRanges // cache for performance
 
-    @tailrec def findBest(ix: Int = 0, result: ContentType = null, maxQ: Float = 0f): Option[ContentType] =
+    @tailrec
+    def findBest(ix: Int = 0, result: ContentType = null, maxQ: Float = 0f): Option[ContentType] =
       if (ix < contentTypes.size) {
         val ct = contentTypes(ix)
         val q = qValueForMediaType(ct.mediaType, mediaRanges)

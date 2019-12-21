@@ -25,14 +25,14 @@ class FileUploadHandler(client: ActorRef, start: ChunkedRequestStart) extends Ac
   log.info(s"Got start of chunked request $method $uri with multipart boundary '$boundary' writing to $tmpFile")
   var bytesWritten = 0L
 
-  def receive = {
+  def receive: Receive = {
     case c: MessageChunk =>
       log.debug(s"Got ${c.data.length} bytes of chunked request $method $uri")
 
       output.write(c.data.toByteArray)
       bytesWritten += c.data.length
 
-    case e: ChunkedMessageEnd =>
+    case _: ChunkedMessageEnd =>
       log.info(s"Got end of chunked request $method $uri")
       output.close()
 
@@ -48,7 +48,7 @@ class FileUploadHandler(client: ActorRef, start: ChunkedRequestStart) extends Ac
     // caution: the next line will read the complete file regardless of its size
     // In the end the mime pull parser is not a decent way of parsing multipart attachments
     // properly
-    val parts = message.getAttachments.asScala.toSeq
+    val parts = message.getAttachments.asScala
 
     HttpEntity(`text/html`,
       <html>
@@ -67,7 +67,7 @@ class FileUploadHandler(client: ActorRef, start: ChunkedRequestStart) extends Ac
   }
   def fileNameForPart(part: MIMEPart): Option[String] =
     for {
-      dispHeader <- part.getHeader("Content-Disposition").asScala.toSeq.lift(0)
+      dispHeader <- part.getHeader("Content-Disposition").asScala.headOption
       Right(disp: `Content-Disposition`) = HttpParser.parseHeader(RawHeader("Content-Disposition", dispHeader))
       name <- disp.parameters.get("filename")
     } yield name
