@@ -35,10 +35,10 @@ object pipelining extends RequestBuilding with ResponseTransformation {
 
   def sendReceive(transport: ActorRef)(implicit ec: ExecutionContext, futureTimeout: Timeout): SendReceive =
     request ⇒ transport ? request map {
-      case x: HttpResponse          ⇒ x
-      case _: HttpResponsePart      ⇒ sys.error("sendReceive doesn't support chunked responses, try sendTo instead")
-      case x: Http.ConnectionClosed ⇒ sys.error("Connection closed before reception of response: " + x)
-      case x                        ⇒ sys.error("Unexpected response from HTTP transport: " + x)
+      case response: HttpResponse     ⇒ response
+      case _: HttpResponsePart        ⇒ sys.error("sendReceive doesn't support chunked responses, try sendTo instead")
+      case evt: Http.ConnectionClosed ⇒ sys.error("Connection closed before reception of response: " + evt)
+      case unexpected                 ⇒ sys.error("Unexpected response from HTTP transport: " + unexpected)
     }
 
   def sendTo(transport: ActorRef) = new SendTo(transport)

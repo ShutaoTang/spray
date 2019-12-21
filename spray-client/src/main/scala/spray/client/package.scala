@@ -19,4 +19,5 @@ package spray.client
 import spray.http._
 
 class PipelineException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
+
 class UnsuccessfulResponseException(val responseStatus: StatusCode) extends RuntimeException

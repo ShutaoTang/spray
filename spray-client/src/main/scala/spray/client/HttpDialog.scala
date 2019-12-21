@@ -79,8 +79,7 @@ object HttpDialog {
     new dialog.State0(Promise.successful(()).future)
   }
 
-  class Dialog private[HttpDialog] (transport: ActorRef)(implicit refFactory: ActorRefFactory,
-                                                         ec: ExecutionContext, requestTimeout: Timeout) {
+  class Dialog private[HttpDialog] (transport: ActorRef)(implicit refFactory: ActorRefFactory, ec: ExecutionContext, requestTimeout: Timeout) {
 
     class State0(trigger: Future[Unit]) {
       def send(request: HttpRequest) = new State1(trigger, responseFor(request, trigger))

@@ -34,7 +34,6 @@ import spray.http._
 import HttpProtocols._
 import spray.can.Http.RegisterChunkHandler
 import spray.can.client.ClientConnectionSettings
-import spray.io.CommandWrapper
 
 class SprayCanServerSpec extends Specification with NoTimeConversions {
   val testConf: Config = ConfigFactory.parseString("""
@@ -56,7 +55,7 @@ class SprayCanServerSpec extends Specification with NoTimeConversions {
       commander.send(listener, Http.Unbind)
       commander expectMsg Http.Unbound
     }
-    "properly bind and unbind an HttpListener with graceperiod" in new TestSetup {
+    "properly bind and unbind an HttpListener with grace-period" in new TestSetup {
       val commander = TestProbe()
       val clientTerminationWatcher = TestProbe()
       val serverTerminationWatcher = TestProbe()
@@ -238,6 +237,7 @@ class SprayCanServerSpec extends Specification with NoTimeConversions {
         serverHandler.expectMsgType[HttpRequest] === dispatched
         socket.close()
       }
+
       class RawRequestHostTestSetup(target: String, protocol: HttpProtocol) extends RawRequestTestSetup(target, protocol) {
         override def request = super.request :+ "Host: example.com"
         override def headers = super.headers :+ HttpHeaders.Host("example.com")

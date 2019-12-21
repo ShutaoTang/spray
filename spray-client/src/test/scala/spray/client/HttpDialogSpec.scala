@@ -22,7 +22,6 @@ import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 import akka.actor.{ Actor, Props, ActorSystem }
 import akka.pattern.ask
-import akka.testkit.TestProbe
 import akka.io.IO
 import spray.can.Http
 import spray.util._
@@ -44,8 +43,8 @@ class HttpDialogSpec extends Specification with NoTimeConversions {
       Props {
         new Actor {
           def receive = {
-            case x: Http.Connected        ⇒ sender ! Http.Register(self)
-            case x: HttpRequest           ⇒ sender ! HttpResponse(entity = x.uri.path.toString)
+            case _: Http.Connected        ⇒ sender ! Http.Register(self)
+            case request: HttpRequest     ⇒ sender ! HttpResponse(entity = request.uri.path.toString)
             case _: Http.ConnectionClosed ⇒ // ignore
           }
         }
@@ -102,9 +101,6 @@ class HttpDialogSpec extends Specification with NoTimeConversions {
   }
 
   step {
-    //    val probe = TestProbe()
-    //    probe.send(IO(Http), Http.CloseAll)
-    //    probe.expectMsg(5.seconds, Http.ClosedAll)
     system.shutdown()
   }
 }

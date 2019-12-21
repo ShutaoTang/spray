@@ -54,7 +54,7 @@ class HttpHostConnectorSpec extends Specification with NoTimeConversions {
       new Actor with ActorLogging {
         var dropNext = true
         val random = new Random(38)
-        def receive = {
+        def receive: Receive = {
           case _: Http.Connected ⇒ sender ! Http.Register(self)
           case HttpRequest(_, Uri.Path("/compressedResponse"), _, _, _) ⇒
             sender ! Gzip.encode(HttpResponse(entity = "content"))
@@ -151,10 +151,9 @@ class HttpHostConnectorSpec extends Specification with NoTimeConversions {
     val pipeline = newPipeline(pipelined)
     val requests = Seq.tabulate(10)(index ⇒ HttpRequest(uri = "/" + index))
     val responseFutures = requests.map(pipeline)
-    responseFutures.zipWithIndex.map {
-      case (future, index) ⇒
-        future.await.copy(headers = Nil) === HttpResponse(200, "GET|/" + index)
-    }.reduceLeft(_ and _)
+    responseFutures.zipWithIndex
+      .map { case (future, index) ⇒ future.await.copy(headers = Nil) === HttpResponse(200, "GET|/" + index) }
+      .reduceLeft(_ and _)
   }
 
 }

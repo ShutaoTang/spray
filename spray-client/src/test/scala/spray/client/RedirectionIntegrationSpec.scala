@@ -3,7 +3,7 @@ package spray.client
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 import com.typesafe.config.ConfigFactory
-import akka.actor.{ ActorRef, Actor, Props, ActorSystem }
+import akka.actor.{ Actor, Props, ActorSystem }
 import spray.can.Http
 import spray.http._
 import spray.http.HttpHeaders.Location
@@ -15,10 +15,6 @@ import scala.concurrent.duration._
 import akka.util.Timeout
 import java.net.InetSocketAddress
 
-/**
- * Date: 05/10/2013
- * Time: 22:17
- */
 class RedirectionIntegrationSpec extends Specification with NoTimeConversions {
   sequential
 
@@ -56,12 +52,17 @@ class RedirectionIntegrationSpec extends Specification with NoTimeConversions {
 
           class PerConnectionActor(peer: InetSocketAddress) extends Actor {
             def receive = {
-              case x: HttpRequest if x.uri.path.toString == "/redirect-rel" ⇒ sender ! redirectRel("/foo/" + peer.getPort)
-              case x: HttpRequest if x.uri.path.toString == "/redirect-abs" ⇒ sender ! redirectAbs(interfaceB, portB, "/foo")
-              case x: HttpRequest if x.uri.path.toString == "/base/redirect-rel-dot" ⇒ sender ! redirectRel("./foo/../bar")
-              case x: HttpRequest if x.uri.path.toString == "/redirect-inf" ⇒ sender ! redirectRel("/redirect-inf")
-              case x: HttpRequest if x.uri.path.toString == s"/foo/${peer.getPort}" ⇒ sender ! HttpResponse(entity = "sameConnection")
-              case x: HttpRequest ⇒ sender ! HttpResponse(entity = "service-a" + x.uri.path.toString)
+              case req: HttpRequest ⇒
+                val url = req.uri.path.toString
+                val specialUrl = "/foo/" + peer.getPort
+                url match {
+                  case "/redirect-rel"          ⇒ sender ! redirectRel("/foo/" + peer.getPort)
+                  case "/redirect-abs"          ⇒ sender ! redirectAbs(interfaceB, portB, "/foo")
+                  case "/base/redirect-rel-dot" ⇒ sender ! redirectRel("./foo/../bar")
+                  case "/redirect-inf"          ⇒ sender ! redirectRel("/redirect-inf")
+                  case `specialUrl`             ⇒ sender ! HttpResponse(entity = "sameConnection")
+                  case _                        ⇒ sender ! HttpResponse(entity = "service-a" + req.uri.path.toString)
+                }
               case _: Http.ConnectionClosed ⇒ context.stop(self)
             }
           }
@@ -74,8 +75,8 @@ class RedirectionIntegrationSpec extends Specification with NoTimeConversions {
       Props {
         new Actor {
           def receive = {
-            case x: Http.Connected        ⇒ sender ! Http.Register(self)
-            case x: HttpRequest           ⇒ sender ! HttpResponse(entity = "service-b" + x.uri.path.toString)
+            case _: Http.Connected        ⇒ sender ! Http.Register(self)
+            case req: HttpRequest         ⇒ sender ! HttpResponse(entity = "service-b" + req.uri.path.toString)
             case _: Http.ConnectionClosed ⇒ // ignore
           }
         }
