@@ -34,5 +34,7 @@ object SimpleHttpClient extends App
     case Success(res) => log.info("{} is running {}", host, res mkString ", ")
     case Failure(error) => log.warning("Error: {}", error)
   }
-  result onComplete { _ => system.shutdown() }
+  result onComplete { _ =>
+    system.shutdown()
+  }
 }
